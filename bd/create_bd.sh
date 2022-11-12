@@ -1,6 +1,6 @@
 #! /bin/bash
 
-pysondb create news.json
-pysondb create statistics.json
-pysondb create subscriptions.json
-pysondb create users.json
+pysondb create bd/news.json
+pysondb create bd/statistics.json
+pysondb create bd/subscriptions.json
+pysondb create bd/users.json
