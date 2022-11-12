@@ -47,6 +47,7 @@ async def notify_user(bot, user_id, start_time=None):
 
 
 async def scheduled_statistics():
+    await sleep(initial_timeout_s)
     while True:
         async with lock:
             update_statistics()
@@ -55,6 +56,7 @@ async def scheduled_statistics():
 
 async def scheduled_notification(bot):
     start_time = datetime.now()
+    await sleep(initial_timeout_s)
     while True:
         for user in get_users():
             await notify_user(bot, user.user_id, start_time)

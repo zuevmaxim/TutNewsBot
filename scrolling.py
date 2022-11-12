@@ -14,16 +14,21 @@ app = Client("scroller", api_id=api_id, api_hash=api_hash)
 lock = asyncio.Lock()
 
 
+async def get_channel(channel):
+    return await app.get_chat(chat_id=f"@{channel}")
+
+
 async def scheduled_scrolling():
     first_scroll = True
     async with app:
+        await sleep(initial_timeout_s)
         while True:
             async with lock:
                 # do not scroll messages earlier than one hour
                 soft_time_offset = datetime.datetime.now() - soft_time_window
                 hard_time_offset = datetime.datetime.now() - hard_time_window
                 for subscription in get_subscription_names():
-                    chat = await app.get_chat(chat_id=f"@{subscription}")
+                    chat = await get_channel(subscription)
                     has_comments = chat.linked_chat is not None
                     async for message in app.get_chat_history(chat_id=f"@{subscription}"):
                         post_id = message.id
