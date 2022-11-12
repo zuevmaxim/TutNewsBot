@@ -7,6 +7,9 @@ english_messages = {
     "remove.subscription": "I won't notify you about posts from {} channel",
     "remove.subscription.unknown": "Cannot unsubscribe from '{}' as you haven't been subscribed for this channel",
     "no.news": "There is no interesting news",
+    "command.start": "Start bot",
+    "command.add": "Add subscription for a channel",
+    "command.remove": "Remove subscription",
 }
 
 russian_messages = {
@@ -18,6 +21,9 @@ russian_messages = {
     "remove.subscription": "Я отменил подписку на {}",
     "remove.subscription.unknown": "Не могу отменить подписку на '{}'. Ты не подписан на этот канал",
     "no.news": "Интересных новостей больше нет",
+    "command.start": "Запустить бот",
+    "command.add": "Добавить подписку на канал",
+    "command.remove": "Отменить подписку",
 }
 
 lang_dictionary = {

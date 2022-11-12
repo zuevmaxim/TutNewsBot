@@ -15,6 +15,16 @@ bot = Bot(token=bot_token)
 dp = Dispatcher(bot)
 
 
+async def init_bot(dp, lang="en"):
+    await dp.bot.set_my_commands(
+        [
+            types.BotCommand("start", create_message("command.start", lang)),
+            types.BotCommand("add", create_message("command.add", lang)),
+            types.BotCommand("remove", create_message("command.remove", lang)),
+        ]
+    )
+
+
 def extract_chanel_name(name):
     name = name.strip()
     prefix = "https://t.me/"
@@ -23,16 +33,17 @@ def extract_chanel_name(name):
     return name
 
 
-@dp.message_handler(commands=['start'])
+@dp.message_handler(commands=["start"])
 async def handle_start(message: types.Message):
     user_id = message.from_user.id
     lang = message.from_user.language_code
     name = message.from_user.full_name
     add_user(User(user_id, name, lang))
+    await init_bot(dp, lang)
     await message.answer(create_message("start.info", lang))
 
 
-@dp.message_handler(commands=['add'])
+@dp.message_handler(commands=["add"])
 async def handle_add_subscription(message: types.Message):
     user_id = message.from_user.id
     lang = message.from_user.language_code
@@ -45,7 +56,7 @@ async def handle_add_subscription(message: types.Message):
     try:
         await get_channel(subscription)
     except BadRequest as e:
-        if e.ID == 'USERNAME_INVALID':
+        if e.ID == "USERNAME_INVALID":
             await message.answer(create_message("channel.not.found", lang, subscription))
             return
         logging.exception(e)
@@ -54,7 +65,7 @@ async def handle_add_subscription(message: types.Message):
     await message.answer(create_message("add.subscription", lang, subscription))
 
 
-@dp.message_handler(commands=['remove'])
+@dp.message_handler(commands=["remove"])
 async def handle_remove_subscription(message: types.Message):
     user_id = message.from_user.id
     lang = message.from_user.language_code
@@ -71,7 +82,7 @@ async def handle_remove_subscription(message: types.Message):
         await message.answer(create_message("remove.subscription.unknown", lang, subscription))
 
 
-@dp.message_handler(commands=['news'])
+@dp.message_handler(commands=["news"])
 async def handle_news(message: types.Message):
     user_id = message.from_user.id
     lang = message.from_user.language_code
@@ -80,7 +91,7 @@ async def handle_news(message: types.Message):
         await message.answer(create_message("no.news", lang))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     init_scrolling()
     init_notification(bot)
-    executor.start_polling(dp, skip_updates=True)
+    executor.start_polling(dp, on_startup=init_bot, skip_updates=True)
