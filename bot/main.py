@@ -1,6 +1,9 @@
 import logging
 
 from aiogram import Bot, Dispatcher, types, executor
+from aiogram.contrib.fsm_storage.memory import MemoryStorage
+from aiogram.dispatcher import FSMContext
+from aiogram.dispatcher.filters import Text
 
 import commands.add
 import commands.list
@@ -8,6 +11,7 @@ import commands.news
 import commands.remove
 import commands.start
 from bot.config import *
+from commands import add
 from data.utils import close_db
 from messages import create_message
 from notify import init_notification, stop_notifications
@@ -25,15 +29,16 @@ for handler in handlers:
     logging.getLogger().addHandler(handler)
 
 bot = Bot(token=bot_token)
-dp = Dispatcher(bot)
+storage = MemoryStorage()
+dp = Dispatcher(bot, storage=storage)
 
 
 async def init_bot(dp, lang="en"):
     await dp.bot.set_my_commands(
         [
-            types.BotCommand("start", create_message("command.start", lang)),
             types.BotCommand("add", create_message("command.add", lang)),
             types.BotCommand("remove", create_message("command.remove", lang)),
+            types.BotCommand("cancel", create_message("command.cancel", lang))
         ]
     )
 
@@ -52,6 +57,23 @@ async def safe_call(f, message):
         lang = message.from_user.language_code
         await message.answer(create_message("internal.error", lang))
 
+# You can use state '*' if you need to handle all states
+@dp.message_handler(state='*', commands=['cancel'])
+@dp.message_handler(Text(equals='cancel', ignore_case=True), state='*')
+async def cancel_handler(message: types.Message, state: FSMContext):
+    """
+    Allow user to cancel any action
+    """
+    lang = message.from_user.language_code
+    current_state = await state.get_state()
+    if current_state is None:
+        return
+
+    logging.info('Cancelling state %r', current_state)
+    # Cancel state and inform user about it
+    await state.finish()
+    # And remove keyboard (just in case)
+    await message.answer(create_message("command.cancel.reaction", lang), reply_markup=types.ReplyKeyboardRemove())
 
 @dp.message_handler(commands=["start"])
 async def handle_start(message: types.Message):
@@ -60,8 +82,16 @@ async def handle_start(message: types.Message):
 
 @dp.message_handler(commands=["add"])
 async def handle_add_subscription(message: types.Message):
+    await safe_call(lambda: commands.add.handle_add_subscription(message), message)
+
+
+@dp.message_handler(state=commands.add.Add.chanel_name)
+async def handle_subscription_name(message: types.Message, state: FSMContext):
     # This is a hack: cannot call get_channel from commands/add.py for some reason
-    await safe_call(lambda: commands.add.handle_add_subscription(message, lambda name: get_channel(name)), message)
+    await safe_call(lambda: add.handle_subscription_name(message, lambda name: get_channel(name), state), message)
+
+
+
 
 
 @dp.message_handler(commands=["remove"])
