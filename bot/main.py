@@ -1,13 +1,14 @@
+import logging
+
 from aiogram import Bot, Dispatcher, types, executor
 from pyrogram.errors import BadRequest
 
-from data.users import *
+from bot.config import bot_token
 from data.subscriptions import *
+from data.users import *
 from messages import create_message
 from notify import notify_user, init_notification
 from scrolling import init_scrolling, get_channel
-from config import bot_token
-import logging
 
 logging.basicConfig(level=logging.INFO)
 

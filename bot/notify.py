@@ -4,7 +4,7 @@ from asyncio import sleep
 
 import numpy as np
 
-from config import *
+from bot.config import *
 from data.news import *
 from data.statistics import *
 from data.subscriptions import *

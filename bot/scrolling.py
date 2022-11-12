@@ -5,7 +5,7 @@ from asyncio import sleep
 from pyrogram import Client
 from pyrogram.errors import BadRequest
 
-from config import *
+from bot.config import *
 from data.news import *
 from data.subscriptions import *
 
