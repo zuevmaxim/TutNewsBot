@@ -33,6 +33,8 @@ lang_dictionary = {
 
 
 def create_message(key, lang, *args):
+    if lang not in lang_dictionary:
+        lang = "en"
     message = lang_dictionary[lang][key]
     if len(args) > 0:
         message = message.format(*args)
