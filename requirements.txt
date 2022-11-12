@@ -2,3 +2,4 @@ tgcrypto
 pysondb
 aiogram
 Pyrogram
+numpy

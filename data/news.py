@@ -6,8 +6,8 @@ news_db = db.getDb("bd/news.json")
 
 
 class Post:
-    def __init__(self, chanel, post_id, timestamp, comments, reactions):
-        self.chanel = chanel
+    def __init__(self, channel, post_id, timestamp, comments, reactions):
+        self.channel = channel
         self.post_id = post_id
         self.timestamp = timestamp
         self.comments = comments
@@ -20,9 +20,9 @@ def post_from_json(json):
 
 
 def add_post(post):
-    current = news_db.getBy({"channel": post.chanel, "post_id": post.post_id})
+    current = news_db.getBy({"channel": post.channel, "post_id": post.post_id})
     if len(current) == 0:
-        news_db.add({"channel": post.chanel,
+        news_db.add({"channel": post.channel,
                      "post_id": post.post_id,
                      "timestamp": post.timestamp.isoformat(),
                      "comments": post.comments,
@@ -35,17 +35,17 @@ def add_post(post):
         news_db.updateById(current["id"], current)
 
 
-def has_post(chanel, post_id):
-    current = news_db.getBy({"channel": chanel, "post_id": post_id})
+def has_post(channel, post_id):
+    current = news_db.getBy({"channel": channel, "post_id": post_id})
     return len(current) > 0
 
 
-def get_popular_posts(chanel, count, last_seen_post):
-    current = news_db.getBy({"channel": chanel})
+def get_posts(channel, last_seen_post=-1):
+    current = news_db.getBy({"channel": channel})
     current = list(map(post_from_json, current))
     current = [post for post in current if post.post_id > last_seen_post]
-    current = list(sorted(current, key=lambda post: post.comments + post.reactions))
-    return current[-count:]
+    current = list(sorted(current, key=lambda post: post.post_id))
+    return current
 
 
 def delete_posts_before(date):
