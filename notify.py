@@ -15,6 +15,8 @@ from scrolling import lock
 def update_statistics():
     for subscription in get_subscription_names():
         posts = get_posts(subscription)
+        if len(posts) == 0:
+            continue
         reactions = np.percentile([post.reactions for post in posts], reactions_percentile)
         comments = np.percentile([post.comments for post in posts], comments_percentile)
         add_statistic(Stat(subscription, reactions, comments))
