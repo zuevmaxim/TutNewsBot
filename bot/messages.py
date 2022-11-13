@@ -1,7 +1,9 @@
 english_messages = {
     "start.info": "Hi! I can filter interesting news from your channels. Please use '/add [channel]' commang to add "
                   "subscription to a channel",
-    "add.subscription": "I will notify you about interesting posts from {}",
+    "add.subscription": "I will notify you about top {}% of posts from {}",
+    "add.incorrect.params": "Please specify channel name and 'high' or 'basic' percentile as an option",
+    "add.incorrect.percentile": "Percentile could be 'high' or 'basic'",
     "empty.channel.name": "Please specify channel name",
     "channel.not.found": "Cannot find '{}' channel. Please check name",
     "remove.subscription": "I won't notify you about posts from {} channel",
@@ -19,7 +21,9 @@ english_messages = {
 russian_messages = {
     "start.info": "Привет! Я умею фильтровать интересные сообщения из твоих каналов. Используй команду "
                   "'/add [channel]', чтобы добавить подписку на канал",
-    "add.subscription": "Буду уведомлять тебя об интересных сообщениях в {}",
+    "add.subscription": "Буду уведомлять тебя о топ {}% постов в {}",
+    "add.incorrect.params": "Укажи название канала и опционально 'high' или 'basic' перцинтиль",
+    "add.incorrect.percentile": "Значение перцинтиля может быть 'high' или 'basic'",
     "empty.channel.name": "Укажи название канала",
     "channel.not.found": "Не могу найти '{}' канал. Укажи другое название",
     "remove.subscription": "Я отменил подписку на {}",

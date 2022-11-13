@@ -25,5 +25,5 @@ notification_timeout_s = int(get_env_or("NOTIFICATION_TIMEOUT_MIN", 15)) * MINUT
 notification_single_timeout_s = 0.5
 
 statistics_update_s = 10 * MINUTE
-comments_percentile = 95
-reactions_percentile = 95
+PERCENTILE_HIGH = 90
+PERCENTILE_BASIC = 80

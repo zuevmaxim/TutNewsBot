@@ -17,35 +17,45 @@ def update_statistics():
         posts = get_posts(subscription)
         if len(posts) == 0:
             continue
-        reactions = np.percentile([post.reactions for post in posts], reactions_percentile)
-        comments = np.percentile([post.comments for post in posts], comments_percentile)
-        add_statistic(Stat(subscription, reactions, comments))
+        reactions_high, reactions_basic = np.percentile([post.reactions for post in posts],
+                                                        [PERCENTILE_HIGH, PERCENTILE_BASIC])
+        comments_high, comments_basic = np.percentile([post.comments for post in posts],
+                                                      [PERCENTILE_HIGH, PERCENTILE_BASIC])
+        add_statistic(Stat(subscription, reactions_high, reactions_basic, comments_high, comments_basic))
     delete_posts_before(datetime.now() - news_drop_time)
 
 
 async def notify_user(bot, user_id, start_time=None):
-    async with lock:
-        user_subscriptions = get_subscriptions(user_id)
-        total = 0
-        for subscription in user_subscriptions:
+    hard_time_offset = datetime.now() - hard_time_window
+    if start_time is None or start_time < hard_time_offset:
+        start_time = hard_time_offset
+    user_subscriptions = get_subscriptions(user_id)
+    chosen_posts = []
+    for subscription in user_subscriptions:
+        async with lock:
             posts = get_posts(subscription.channel, subscription.last_seen_post)
-            if start_time is not None:
-                posts = [post for post in posts if post.timestamp > start_time]
+            posts = [post for post in posts if post.timestamp > start_time]
             if len(posts) == 0:
                 continue
             stat = get_statistics(subscription.channel)
-            posts = [post for post in posts if post.comments > stat.comments or post.reactions > stat.reactions]
+            if stat is None:
+                logging.warning(f"Cannot notify user, as statistics fot channel {subscription.channel} is not ready")
+                continue
+            required_comments = stat.comments_high if subscription.percentile == "high" else stat.comments_basic
+            required_reactions = stat.reactions_high if subscription.percentile == "basic" else stat.reactions_basic
+            posts = [post for post in posts if post.comments > required_comments or post.reactions > required_reactions]
             if len(posts) == 0:
                 continue
             last_post_id = posts[-1].post_id
             update_last_seen_post(user_id, subscription.channel, last_post_id)
-            for post in posts:
-                total += 1
-                link = f"https://t.me/{subscription.channel}/{post.post_id}"
-                logging.info(f"Send message to {user_id}: {link} #comments={post.comments} #reactions={post.reactions}")
-                await bot.send_message(user_id, link)
-                await sleep(notification_single_timeout_s)
-    return total
+            chosen_posts += posts
+    chosen_posts.sort(key=lambda post: post.timestamp)
+    for post in chosen_posts:
+        link = f"https://t.me/{post.channel}/{post.post_id}"
+        logging.info(f"Send message to {user_id}: {link} #comments={post.comments} #reactions={post.reactions}")
+        await bot.send_message(user_id, link)
+        await sleep(notification_single_timeout_s)
+    return len(chosen_posts)
 
 
 async def scheduled_statistics():
