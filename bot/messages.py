@@ -16,6 +16,7 @@ english_messages = {
     "list.subscriptions": "Your subscriptions:",
     "list.subscriptions.element.with.stat": "{} ({} comments, {} reactions)",
     "list.subscriptions.element": "{}",
+    "internal.error": "Internal bot error",
 }
 
 russian_messages = {
@@ -36,6 +37,7 @@ russian_messages = {
     "list.subscriptions": "Твои подписки:",
     "list.subscriptions.element.with.stat": "{} ({} комментариев, {} реакций)",
     "list.subscriptions.element": "{}",
+    "internal.error": "У меня произошла ошибка",
 }
 
 lang_dictionary = {

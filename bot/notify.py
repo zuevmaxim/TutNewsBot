@@ -13,20 +13,20 @@ from scrolling import lock
 
 
 def update_statistics():
-    for subscription in get_subscription_names():
-        posts = get_posts(subscription)
+    for channel in get_subscription_names():
+        posts = get_posts(channel)
         if len(posts) == 0:
             continue
         reactions_high, reactions_basic = np.percentile([post.reactions for post in posts],
                                                         [PERCENTILE_HIGH, PERCENTILE_BASIC])
         comments_high, comments_basic = np.percentile([post.comments for post in posts],
                                                       [PERCENTILE_HIGH, PERCENTILE_BASIC])
-        logging.info(f"Update statistics for channel '{subscription.channel}' "
+        logging.info(f"Update statistics for channel '{channel}' "
                      f"#reactions_high={int(reactions_high)}"
                      f"#reactions_basic={int(reactions_basic)}"
                      f"#comments_high={int(comments_high)}"
                      f"#comments_basic={int(comments_basic)}")
-        add_statistic(Stat(subscription, reactions_high, reactions_basic, comments_high, comments_basic))
+        add_statistic(Stat(channel, reactions_high, reactions_basic, comments_high, comments_basic))
     delete_posts_before(datetime.now() - news_drop_time)
 
 
@@ -66,8 +66,11 @@ async def notify_user(bot, user_id, start_time=None):
 async def scheduled_statistics():
     await sleep(initial_timeout_s)
     while True:
-        async with lock:
-            update_statistics()
+        try:
+            async with lock:
+                update_statistics()
+        except Exception as e:
+            logging.exception(e)
         await sleep(statistics_update_s)
 
 
@@ -75,8 +78,11 @@ async def scheduled_notification(bot):
     start_time = datetime.now()
     await sleep(initial_timeout_s)
     while True:
-        for user in get_users():
-            await notify_user(bot, user.user_id, start_time)
+        try:
+            for user in get_users():
+                await notify_user(bot, user.user_id, start_time)
+        except Exception as e:
+            logging.exception(e)
         await sleep(notification_timeout_s)
 
 
