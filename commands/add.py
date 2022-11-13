@@ -36,7 +36,7 @@ async def handle_add_subscription(message: types.Message, get_channel):
         if e.ID == "USERNAME_INVALID" or e.ID == "USERNAME_NOT_OCCUPIED":
             await message.answer(create_message("channel.not.found", lang, channel))
             return
-        logging.exception(e)
+        raise e
 
     add_subscription(Subscription(user_id, channel, percentile))
     percentile = PERCENTILE_HIGH if percentile == "high" else PERCENTILE_BASIC
