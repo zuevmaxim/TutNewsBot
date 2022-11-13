@@ -4,6 +4,8 @@ from aiogram import Bot, Dispatcher, types, executor
 from pyrogram.errors import BadRequest
 
 from bot.config import bot_token
+from bot.utils import pretty_int
+from data.statistics import get_statistics
 from data.subscriptions import *
 from data.users import *
 from messages import create_message
@@ -90,6 +92,27 @@ async def handle_news(message: types.Message):
     count = await notify_user(bot, user_id)
     if count == 0:
         await message.answer(create_message("no.news", lang))
+
+
+@dp.message_handler(commands=["list"])
+async def handle_list(message: types.Message):
+    user_id = message.from_user.id
+    lang = message.from_user.language_code
+    subscriptions = get_subscription_names(user_id)
+    if len(subscriptions) == 0:
+        await message.answer(create_message("list.subscriptions.empty", lang))
+        return
+    text = create_message("list.subscriptions", lang) + "\n"
+    for channel in subscriptions:
+        stat = get_statistics(channel)
+        if stat is None:
+            text += create_message("list.subscriptions.element", lang, channel)
+        else:
+            text += create_message("list.subscriptions.element.with.stat", lang, channel,
+                                   pretty_int(stat.comments),
+                                   pretty_int(stat.reactions))
+        text += "\n"
+    await message.answer(text)
 
 
 if __name__ == "__main__":

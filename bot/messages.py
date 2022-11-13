@@ -10,6 +10,10 @@ english_messages = {
     "command.start": "Start bot",
     "command.add": "Add subscription for a channel",
     "command.remove": "Remove subscription",
+    "list.subscriptions.empty": "You have no subscriptions",
+    "list.subscriptions": "Your subscriptions:",
+    "list.subscriptions.element.with.stat": "{} ({} comments, {} reactions)",
+    "list.subscriptions.element": "{}",
 }
 
 russian_messages = {
@@ -24,6 +28,10 @@ russian_messages = {
     "command.start": "Запустить бот",
     "command.add": "Добавить подписку на канал",
     "command.remove": "Отменить подписку",
+    "list.subscriptions.empty": "У тебя нет ни одной подписки",
+    "list.subscriptions": "Твои подписки:",
+    "list.subscriptions.element.with.stat": "{} ({} комментариев, {} реакций)",
+    "list.subscriptions.element": "{}",
 }
 
 lang_dictionary = {
