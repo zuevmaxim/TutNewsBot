@@ -12,7 +12,16 @@ from messages import create_message
 from notify import notify_user, init_notification
 from scrolling import init_scrolling, get_channel
 
-logging.basicConfig(level=logging.INFO)
+formatter = logging.Formatter("%(asctime)s [%(levelname)-7.7s]  %(message)s")
+handlers = [
+    logging.FileHandler("bot.log", mode="w"),
+    logging.StreamHandler(),
+]
+logging.getLogger().setLevel(logging.INFO)
+for handler in handlers:
+    handler.setFormatter(formatter)
+    handler.setLevel(logging.INFO)
+    logging.getLogger().addHandler(handler)
 
 bot = Bot(token=bot_token)
 dp = Dispatcher(bot)

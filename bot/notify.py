@@ -21,11 +21,17 @@ def update_statistics():
                                                         [PERCENTILE_HIGH, PERCENTILE_BASIC])
         comments_high, comments_basic = np.percentile([post.comments for post in posts],
                                                       [PERCENTILE_HIGH, PERCENTILE_BASIC])
+        logging.info(f"Update statistics for channel '{subscription.channel}' "
+                     f"#reactions_high={int(reactions_high)}"
+                     f"#reactions_basic={int(reactions_basic)}"
+                     f"#comments_high={int(comments_high)}"
+                     f"#comments_basic={int(comments_basic)}")
         add_statistic(Stat(subscription, reactions_high, reactions_basic, comments_high, comments_basic))
     delete_posts_before(datetime.now() - news_drop_time)
 
 
 async def notify_user(bot, user_id, start_time=None):
+    logging.info(f"Start notification session for {user_id}")
     hard_time_offset = datetime.now() - hard_time_window
     if start_time is None or start_time < hard_time_offset:
         start_time = hard_time_offset
