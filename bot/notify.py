@@ -11,9 +11,18 @@ from data.subscriptions import *
 from data.users import *
 from scrolling import lock
 
+stop = False
+
+
+def stop_notifications():
+    global stop
+    stop = True
+
 
 def update_statistics():
     for channel in get_subscription_names():
+        if stop:
+            return
         posts = get_posts(channel)
         if len(posts) == 0:
             continue
@@ -71,6 +80,8 @@ async def scheduled_statistics():
                 update_statistics()
         except Exception as e:
             logging.exception(e)
+        if stop:
+            return
         await sleep(statistics_update_s)
 
 
@@ -80,9 +91,13 @@ async def scheduled_notification(bot):
     while True:
         try:
             for user in get_users():
+                if stop:
+                    return
                 await notify_user(bot, user.user_id, start_time)
         except Exception as e:
             logging.exception(e)
+        if stop:
+            return
         await sleep(notification_timeout_s)
 
 

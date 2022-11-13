@@ -8,9 +8,10 @@ import commands.news
 import commands.remove
 import commands.start
 from bot.config import *
+from data.utils import close_db
 from messages import create_message
-from notify import init_notification
-from scrolling import init_scrolling, get_channel
+from notify import init_notification, stop_notifications
+from scrolling import init_scrolling, get_channel, stop_scrolling
 
 formatter = logging.Formatter("%(asctime)s [%(levelname)-7.7s]  %(message)s")
 handlers = [
@@ -35,6 +36,12 @@ async def init_bot(dp, lang="en"):
             types.BotCommand("remove", create_message("command.remove", lang)),
         ]
     )
+
+
+async def shutdown_bot(dp):
+    close_db()
+    stop_scrolling()
+    stop_notifications()
 
 
 async def safe_call(f, message):
@@ -75,4 +82,4 @@ async def handle_list(message: types.Message):
 if __name__ == "__main__":
     init_scrolling()
     init_notification(bot)
-    executor.start_polling(dp, on_startup=init_bot, skip_updates=True)
+    executor.start_polling(dp, on_startup=init_bot, on_shutdown=shutdown_bot, skip_updates=True)
