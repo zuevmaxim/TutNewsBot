@@ -111,19 +111,20 @@ async def handle_news(message: types.Message):
 async def handle_list(message: types.Message):
     user_id = message.from_user.id
     lang = message.from_user.language_code
-    subscriptions = get_subscription_names(user_id)
+    subscriptions = get_subscriptions(user_id)
     if len(subscriptions) == 0:
         await message.answer(create_message("list.subscriptions.empty", lang))
         return
     text = create_message("list.subscriptions", lang) + "\n"
-    for channel in subscriptions:
-        stat = get_statistics(channel)
+    for subscription in subscriptions:
+        stat = get_statistics(subscription.channel)
         if stat is None:
-            text += create_message("list.subscriptions.element", lang, channel)
+            text += create_message("list.subscriptions.element", lang, subscription.channel)
         else:
-            text += create_message("list.subscriptions.element.with.stat", lang, channel,
-                                   pretty_int(stat.comments),
-                                   pretty_int(stat.reactions))
+            comments, reactions = stat.get_percentiles(subscription.percentile)
+            text += create_message("list.subscriptions.element.with.stat", lang, subscription.channel,
+                                   pretty_int(comments),
+                                   pretty_int(reactions))
         text += "\n"
     await message.answer(text)
 

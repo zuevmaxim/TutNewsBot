@@ -17,6 +17,14 @@ class Stat:
         self.comments_basic = comments_basic
         self.timestamp = timestamp
 
+    def get_percentiles(self, tag):
+        if tag == "high":
+            return self.comments_high, self.reactions_high
+        elif tag == "basic":
+            return self.comments_basic, self.reactions_basic
+        else:
+            assert False
+
 
 def stat_from_json(json):
     time = datetime.fromisoformat(json["timestamp"])

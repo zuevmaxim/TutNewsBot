@@ -41,9 +41,8 @@ async def notify_user(bot, user_id, start_time=None):
             if stat is None:
                 logging.warning(f"Cannot notify user, as statistics fot channel {subscription.channel} is not ready")
                 continue
-            required_comments = stat.comments_high if subscription.percentile == "high" else stat.comments_basic
-            required_reactions = stat.reactions_high if subscription.percentile == "basic" else stat.reactions_basic
-            posts = [post for post in posts if post.comments > required_comments or post.reactions > required_reactions]
+            comments, reactions = stat.get_percentiles(subscription.percentile)
+            posts = [post for post in posts if post.comments > comments or post.reactions > reactions]
             if len(posts) == 0:
                 continue
             last_post_id = posts[-1].post_id
