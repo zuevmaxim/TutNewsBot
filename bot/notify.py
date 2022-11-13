@@ -39,17 +39,15 @@ def update_statistics():
     delete_posts_before(datetime.now() - news_drop_time)
 
 
-async def notify_user(bot, user_id, start_time=None):
+async def notify_user(bot, user_id):
     logging.info(f"Start notification session for {user_id}")
     hard_time_offset = datetime.now() - hard_time_window
-    if start_time is None or start_time < hard_time_offset:
-        start_time = hard_time_offset
     user_subscriptions = get_subscriptions(user_id)
     chosen_posts = []
     for subscription in user_subscriptions:
         async with lock:
             posts = get_posts(subscription.channel, subscription.last_seen_post)
-            posts = [post for post in posts if post.timestamp > start_time]
+            posts = [post for post in posts if post.timestamp > hard_time_offset]
             if len(posts) == 0:
                 continue
             stat = get_statistics(subscription.channel)
@@ -86,14 +84,13 @@ async def scheduled_statistics():
 
 
 async def scheduled_notification(bot):
-    start_time = datetime.now()
     await sleep(initial_timeout_s)
     while True:
         try:
             for user in get_users():
                 if stop:
                     return
-                await notify_user(bot, user.user_id, start_time)
+                await notify_user(bot, user.user_id)
         except Exception as e:
             logging.exception(e)
         if stop:
