@@ -59,7 +59,7 @@ async def handle_add_subscription(message: types.Message):
     try:
         await get_channel(subscription)
     except BadRequest as e:
-        if e.ID == "USERNAME_INVALID":
+        if e.ID == "USERNAME_INVALID" or e.ID == "USERNAME_NOT_OCCUPIED":
             await message.answer(create_message("channel.not.found", lang, subscription))
             return
         logging.exception(e)
