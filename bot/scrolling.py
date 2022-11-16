@@ -25,6 +25,10 @@ async def get_channel(channel):
     return await app.get_chat(chat_id=f"@{channel}")
 
 
+async def get_messages(channel, post_ids):
+    return await app.get_messages(chat_id=f"@{channel}", message_ids=post_ids)
+
+
 async def scheduled_scrolling():
     first_scroll = True
     async with app:

@@ -3,13 +3,14 @@ import logging
 from asyncio import sleep
 
 import numpy as np
+from pyrogram.enums import MessageEntityType
 
 from bot.config import *
 from data.news import *
 from data.statistics import *
 from data.subscriptions import *
 from data.users import *
-from scrolling import lock
+from scrolling import lock, get_messages
 
 stop = False
 
@@ -60,14 +61,40 @@ async def notify_user(bot, user_id):
                 continue
             last_post_id = posts[-1].post_id
             update_last_seen_post(user_id, subscription.channel, last_post_id)
+            posts = list(zip(posts, await get_messages(subscription.channel, [post.post_id for post in posts])))
             chosen_posts += posts
-    chosen_posts.sort(key=lambda post: post.timestamp)
-    for post in chosen_posts:
+    chosen_posts.sort(key=lambda post: post[0].timestamp)
+    for post, message in chosen_posts:
         link = f"https://t.me/{post.channel}/{post.post_id}"
         logging.info(f"Send message to {user_id}: {link} #comments={post.comments} #reactions={post.reactions}")
-        await bot.send_message(user_id, link)
+        if message.text is not None:
+            text = to_markdown(message.text, message.entities)
+            await bot.send_message(user_id, parse_mode="markdown",
+                                   text=f"*{message.chat.title}*\n{text}\n[{post.channel}]({link})",
+                                   disable_web_page_preview=True)
+        else:
+            await bot.send_message(user_id, parse_mode="markdown", text=f"[{message.chat.title}]({link})")
         await sleep(notification_single_timeout_s)
     return len(chosen_posts)
+
+
+def to_markdown(text, entities):
+    if entities is None or len(entities) == 0:
+        return text
+    new_text = text[:entities[0].offset]
+    for i, e in enumerate(entities):
+        if e.type == MessageEntityType.BOLD:
+            c = '*'
+        elif e.type == MessageEntityType.ITALIC:
+            c = '_'
+        else:
+            c = ''
+        new_text += c + text[e.offset: e.offset + e.length] + c
+        if i + 1 == len(entities):
+            new_text += text[e.offset + e.length:]
+        else:
+            new_text += text[e.offset + e.length: entities[i + 1].offset]
+    return new_text
 
 
 async def scheduled_statistics():
