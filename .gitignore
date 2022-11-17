@@ -3,5 +3,5 @@
 /.idea
 *.env
 *__pycache__*
-sync.sh
-bot.log
+*.sh
+*.log

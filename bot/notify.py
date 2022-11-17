@@ -10,9 +10,10 @@ from data.news import *
 from data.statistics import *
 from data.subscriptions import *
 from data.users import *
-from scrolling import lock, get_messages
+from scrolling import lock, get_messages, load_file
 
 stop = False
+MAX_CAPTION_LENGTH = 500
 
 
 def stop_notifications():
@@ -65,20 +66,46 @@ async def notify_user(bot, user_id):
             chosen_posts += posts
     chosen_posts.sort(key=lambda post: post[0].timestamp)
     for post, message in chosen_posts:
+        await sleep(notification_single_timeout_s)
         link = f"https://t.me/{post.channel}/{post.post_id}"
         logging.info(f"Send message to {user_id}: {link} #comments={post.comments} #reactions={post.reactions}")
         if message.text is not None:
             text = to_markdown(message.text, message.entities)
-            await bot.send_message(user_id, parse_mode="markdown",
-                                   text=f"*{message.chat.title}*\n{text}\n[{post.channel}]({link})",
+            await bot.send_message(user_id, parse_mode="markdown", text=create_text(message, text),
                                    disable_web_page_preview=True)
-        else:
-            await bot.send_message(user_id, parse_mode="markdown", text=f"[{message.chat.title}]({link})")
-        await sleep(notification_single_timeout_s)
+            continue
+        try:
+            if message.photo is not None:
+                await resend_file(message.photo.file_id, message, user_id, bot.send_photo)
+            elif message.video is not None:
+                await resend_file(message.video.file_id, message, user_id, bot.send_video)
+            continue
+        except Exception as e:
+            logging.exception(e)
+        await bot.send_message(user_id, parse_mode="markdown", text=f"[{message.chat.title}]({link})")
+
     return len(chosen_posts)
 
 
+async def resend_file(file_id, message, user_id, send):
+    file = await load_file(file_id)
+    text = to_markdown(message.caption, message.entities)
+    if len(text) > MAX_CAPTION_LENGTH:
+        text = text[:MAX_CAPTION_LENGTH] + "..."
+    try:
+        with open(file, "rb") as f:
+            await send(user_id, f, parse_mode="markdown", caption=create_text(message, text))
+    finally:
+        os.remove(file)
+
+
+def create_text(message, text):
+    return f"*{message.chat.title}:*\n{text}\n[{message.chat.username}]({message.link})"
+
+
 def to_markdown(text, entities):
+    if text is None:
+        return ""
     if entities is None or len(entities) == 0:
         return text
     new_text = text[:entities[0].offset]
