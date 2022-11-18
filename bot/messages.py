@@ -1,5 +1,5 @@
 english_messages = {
-    "start.info": "Hi! I can filter interesting news from your channels. Please use '/add [channel]' commang to add "
+    "start.info": "Hi! I can filter interesting news from your channels. Please use /add command to add "
                   "subscription to a channel",
     "add.subscription": "I will notify you about top {}% of posts from {}",
     "add.incorrect.params": "Please specify channel name and 'high' or 'basic' percentile as an option",
@@ -25,7 +25,7 @@ english_messages = {
 
 russian_messages = {
     "start.info": "Привет! Я умею фильтровать интересные сообщения из твоих каналов. Используй команду "
-                  "'/add [channel]', чтобы добавить подписку на канал",
+                  "/add, чтобы добавить подписку на канал",
     "add.subscription": "Буду уведомлять тебя о топ {}% постов в {}",
     "add.incorrect.params": "Укажи название канала и опционально 'high' или 'basic' перцинтиль",
     "add.incorrect.percentile": "Значение перцинтиля может быть 'high' или 'basic'",
