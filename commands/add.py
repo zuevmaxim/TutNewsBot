@@ -33,17 +33,16 @@ async def handle_subscription_name(message: types.Message, get_channel, state: F
         await message.answer(create_message("empty.channel.name", lang))
         return
 
-    if (await state.get_state()).startswith("Add"):
-        try:
-            chat = await get_channel(channel)
-            if chat.type != ChatType.CHANNEL:
-                await message.answer(create_message("bad.type.of.channel", lang, channel))
-                return
-        except BadRequest as e:
-            if e.ID == "USERNAME_INVALID" or e.ID == "USERNAME_NOT_OCCUPIED":
-                await message.answer(create_message("channel.not.found", lang, channel))
-                return
-            raise e
+    try:
+        chat = await get_channel(channel)
+        if chat.type != ChatType.CHANNEL:
+            await message.answer(create_message("bad.type.of.channel", lang, channel))
+            return
+    except BadRequest as e:
+        if e.ID == "USERNAME_INVALID" or e.ID == "USERNAME_NOT_OCCUPIED":
+            await message.answer(create_message("channel.not.found", lang, channel))
+            return
+        raise e
     await state.finish()
     subscription = get_subscription(message.from_user.id, channel)
     if subscription is not None:

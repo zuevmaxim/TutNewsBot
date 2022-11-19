@@ -64,11 +64,9 @@ async def safe_call(f, message):
 async def cancel_handler(message: types.Message, state: FSMContext):
     lang = message.from_user.language_code
     current_state = await state.get_state()
-    if current_state is None:
-        return
-
-    logging.info('Cancelling state %r', current_state)
-    await state.finish()
+    if current_state is not None:
+        logging.info('Cancelling state %r', current_state)
+        await state.finish()
     await message.answer(create_message("command.cancel.reaction", lang), reply_markup=types.ReplyKeyboardRemove())
 
 
