@@ -62,7 +62,7 @@ async def reply_subscription(message, channel, percentile, message_key="add.subs
         create_message("change.subscription", lang, 100 - percentile_number(other_percentile)),
         callback_data=f"set_percentile;{channel};{other_percentile}")
     markup = InlineKeyboardMarkup().add(change_percentile_button)
-    text = create_message(message_key, lang, 100 - percentile_number(percentile), channel)
+    text = create_message(message_key, lang, 100 - percentile_number(percentile), f"@{channel}")
     await message.bot.send_message(user_id, text, reply_markup=markup)
 
 

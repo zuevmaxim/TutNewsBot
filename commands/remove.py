@@ -16,6 +16,6 @@ async def handle_remove_subscription(message: types.Message):
 
     result = remove_subscription(user_id, subscription)
     if result:
-        await message.answer(create_message("remove.subscription", lang, subscription))
+        await message.answer(create_message("remove.subscription", lang, f"@{subscription}"))
     else:
         await message.answer(create_message("remove.subscription.unknown", lang, subscription))
