@@ -17,10 +17,10 @@ async def handle_list(message: types.Message):
     for subscription in subscriptions:
         stat = get_statistics(subscription.channel)
         if stat is None:
-            text += create_message("list.subscriptions.element", lang, subscription.channel)
+            text += create_message("list.subscriptions.element", lang, f"@{subscription.channel}")
         else:
             comments, reactions = stat.get_percentiles(subscription.percentile)
-            text += create_message("list.subscriptions.element.with.stat", lang, subscription.channel,
+            text += create_message("list.subscriptions.element.with.stat", lang, f"@{subscription.channel}",
                                    pretty_int(comments),
                                    pretty_int(reactions))
         text += "\n"
