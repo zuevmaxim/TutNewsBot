@@ -1,7 +1,7 @@
 from aiogram import types
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import StatesGroup, State
-from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
+from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, KeyboardButton, ReplyKeyboardMarkup
 from pyrogram.enums import ChatType
 from pyrogram.errors import BadRequest
 
@@ -12,6 +12,10 @@ from data.subscriptions import *
 
 
 class Add(StatesGroup):
+    chanel_name = State()
+
+
+class Change(StatesGroup):
     chanel_name = State()
 
 
@@ -29,16 +33,17 @@ async def handle_subscription_name(message: types.Message, get_channel, state: F
         await message.answer(create_message("empty.channel.name", lang))
         return
 
-    try:
-        chat = await get_channel(channel)
-        if chat.type != ChatType.CHANNEL:
-            await message.answer(create_message("bad.type.of.channel", lang, channel))
-            return
-    except BadRequest as e:
-        if e.ID == "USERNAME_INVALID" or e.ID == "USERNAME_NOT_OCCUPIED":
-            await message.answer(create_message("channel.not.found", lang, channel))
-            return
-        raise e
+    if (await state.get_state()).startswith("Add"):
+        try:
+            chat = await get_channel(channel)
+            if chat.type != ChatType.CHANNEL:
+                await message.answer(create_message("bad.type.of.channel", lang, channel))
+                return
+        except BadRequest as e:
+            if e.ID == "USERNAME_INVALID" or e.ID == "USERNAME_NOT_OCCUPIED":
+                await message.answer(create_message("channel.not.found", lang, channel))
+                return
+            raise e
     await state.finish()
     subscription = get_subscription(message.from_user.id, channel)
     if subscription is not None:
@@ -70,3 +75,18 @@ async def process_callback_set_percentile(callback_query: types.CallbackQuery):
 
 def percentile_number(percentile):
     return PERCENTILE_HIGH if percentile == "high" else PERCENTILE_BASIC
+
+
+async def handle_change_subscription(message: types.Message):
+    await Change.chanel_name.set()
+    await reply_choose_channel(message)
+
+
+async def reply_choose_channel(message):
+    user_id = message.from_user.id
+    lang = message.from_user.language_code
+    channels = get_subscription_names(user_id)
+    markup = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True, row_width=2)
+    for channel in channels:
+        markup.insert(KeyboardButton(f"@{channel}"))
+    await message.answer(create_message("choose.channel", lang), reply_markup=markup)

@@ -12,4 +12,6 @@ def extract_chanel_name(name):
     prefix = "https://t.me/"
     if name[:len(prefix)] == prefix:
         name = name[len(prefix):]
+    if name.startswith("@"):
+        name = name[1:]
     return name

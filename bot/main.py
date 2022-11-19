@@ -37,8 +37,9 @@ async def init_bot(dp, lang="en"):
     await dp.bot.set_my_commands(
         [
             types.BotCommand("add", create_message("command.add", lang)),
+            types.BotCommand("setup", create_message("command.change", lang)),
             types.BotCommand("remove", create_message("command.remove", lang)),
-            types.BotCommand("cancel", create_message("command.cancel", lang))
+            types.BotCommand("cancel", create_message("command.cancel", lang)),
         ]
     )
 
@@ -82,10 +83,14 @@ async def handle_add_subscription(message: types.Message):
     await safe_call(lambda: commands.add.handle_add_subscription(message), message)
 
 
-@dp.message_handler(state=commands.add.Add.chanel_name)
+@dp.message_handler(state=[commands.add.Add.chanel_name, commands.add.Change.chanel_name])
 async def handle_subscription_name(message: types.Message, state: FSMContext):
     # This is a hack: cannot call get_channel from commands/add.py for some reason
     await safe_call(lambda: add.handle_subscription_name(message, lambda name: get_channel(name), state), message)
+
+@dp.message_handler(commands=["setup"])
+async def handle_change_subscription(message: types.Message):
+    await safe_call(lambda: commands.add.handle_change_subscription(message), message)
 
 
 @dp.callback_query_handler(lambda c: c.data.startswith("set_percentile;"))
