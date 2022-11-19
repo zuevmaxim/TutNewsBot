@@ -2,6 +2,7 @@ english_messages = {
     "start.info": "Hi! I can filter interesting news from your channels. Please use /add command to add "
                   "subscription to a channel",
     "add.subscription": "I will notify you about top {}% of posts from {}",
+    "existing.subscription": "I notify you about top {}% of posts from {}",
     "change.subscription": "Notify about top {}%",
     "empty.channel.name": "Please specify channel name",
     "channel.not.found": "Cannot find '{}' channel. Please check name",
@@ -26,6 +27,7 @@ russian_messages = {
     "start.info": "Привет! Я умею фильтровать интересные сообщения из твоих каналов. Используй команду "
                   "/add, чтобы добавить подписку на канал",
     "add.subscription": "Буду уведомлять тебя о топ {}% постов в {}",
+    "existing.subscription": "Я уведомляю тебя о топ {}% постов в {}",
     "change.subscription": "Уведомляй о топ {}%",
     "empty.channel.name": "Укажи название канала",
     "channel.not.found": "Не могу найти '{}' канал. Укажи другое название",

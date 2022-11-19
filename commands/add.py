@@ -40,14 +40,14 @@ async def handle_subscription_name(message: types.Message, get_channel, state: F
             return
         raise e
     await state.finish()
-    percentile = "basic"
     subscription = get_subscription(message.from_user.id, channel)
     if subscription is not None:
-        percentile = subscription.percentile
-    await reply_add(message, channel, percentile)
+        await reply_subscription(message, channel, subscription.percentile, "existing.subscription")
+    else:
+        await reply_subscription(message, channel, "basic")
 
 
-async def reply_add(message, channel, percentile):
+async def reply_subscription(message, channel, percentile, message_key="add.subscription"):
     user_id = message.from_user.id
     lang = message.from_user.language_code
     add_subscription(Subscription(user_id, channel, percentile))
@@ -57,7 +57,7 @@ async def reply_add(message, channel, percentile):
         create_message("change.subscription", lang, 100 - percentile_number(other_percentile)),
         callback_data=f"set_percentile;{channel};{other_percentile}")
     markup = InlineKeyboardMarkup().add(change_percentile_button)
-    text = create_message("add.subscription", lang, 100 - percentile_number(percentile), channel)
+    text = create_message(message_key, lang, 100 - percentile_number(percentile), channel)
     await message.bot.send_message(user_id, text, reply_markup=markup)
 
 
@@ -65,7 +65,7 @@ async def process_callback_set_percentile(callback_query: types.CallbackQuery):
     channel, percentile = callback_query.data.split(";")[1:]
     await callback_query.answer()
     await callback_query.message.delete()
-    await reply_add(callback_query, channel, percentile)
+    await reply_subscription(callback_query, channel, percentile)
 
 
 def percentile_number(percentile):
