@@ -3,3 +3,5 @@ pysondb
 aiogram
 Pyrogram
 numpy
+psycopg2-binary
+dacite
