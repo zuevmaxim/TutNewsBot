@@ -49,6 +49,14 @@ def get_subscriptions(user_id=None):
     return list(map(subscription_from_json, current))
 
 
+def get_subscription(user_id, channel):
+    current = subscriptions_db.getBy({"user_id": user_id, "channel": channel})
+    if len(current) == 0:
+        return None
+    assert len(current) == 1
+    return subscription_from_json(current[0])
+
+
 def update_last_seen_post(user_id, channel, last_post):
     current = subscriptions_db.getBy({"user_id": user_id, "channel": channel})
     if len(current) == 1:

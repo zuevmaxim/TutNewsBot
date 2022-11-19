@@ -2,8 +2,7 @@ english_messages = {
     "start.info": "Hi! I can filter interesting news from your channels. Please use /add command to add "
                   "subscription to a channel",
     "add.subscription": "I will notify you about top {}% of posts from {}",
-    "add.incorrect.params": "Please specify channel name and 'high' or 'basic' percentile as an option",
-    "add.incorrect.percentile": "Percentile could be 'high' or 'basic'",
+    "change.subscription": "Notify about top {}%",
     "empty.channel.name": "Please specify channel name",
     "channel.not.found": "Cannot find '{}' channel. Please check name",
     "remove.subscription": "I won't notify you about posts from {} channel",
@@ -27,8 +26,7 @@ russian_messages = {
     "start.info": "Привет! Я умею фильтровать интересные сообщения из твоих каналов. Используй команду "
                   "/add, чтобы добавить подписку на канал",
     "add.subscription": "Буду уведомлять тебя о топ {}% постов в {}",
-    "add.incorrect.params": "Укажи название канала и опционально 'high' или 'basic' перцинтиль",
-    "add.incorrect.percentile": "Значение перцинтиля может быть 'high' или 'basic'",
+    "change.subscription": "Уведомляй о топ {}%",
     "empty.channel.name": "Укажи название канала",
     "channel.not.found": "Не могу найти '{}' канал. Укажи другое название",
     "remove.subscription": "Я отменил подписку на {}",
@@ -36,7 +34,7 @@ russian_messages = {
     "no.news": "Интересных новостей больше нет",
     "command.start": "Запустить бот",
     "command.add": "Добавить подписку на канал",
-    "write.channel.name": "Пожалуйста, напишите название канала",
+    "write.channel.name": "Укажи название канала",
     "command.remove": "Отменить подписку",
     "command.cancel": "Отменить текущую операцию",
     "command.cancel.reaction": "Команда отменена",

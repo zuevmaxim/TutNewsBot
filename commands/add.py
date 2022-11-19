@@ -1,8 +1,7 @@
-import logging
-
 from aiogram import types
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import StatesGroup, State
+from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from pyrogram.enums import ChatType
 from pyrogram.errors import BadRequest
 
@@ -23,7 +22,6 @@ async def handle_add_subscription(message: types.Message):
 
 
 async def handle_subscription_name(message: types.Message, get_channel, state: FSMContext):
-    user_id = message.from_user.id
     lang = message.from_user.language_code
     text = message.text
     channel = extract_chanel_name(text)
@@ -43,8 +41,32 @@ async def handle_subscription_name(message: types.Message, get_channel, state: F
         raise e
     await state.finish()
     percentile = "basic"
+    subscription = get_subscription(message.from_user.id, channel)
+    if subscription is not None:
+        percentile = subscription.percentile
+    await reply_add(message, channel, percentile)
+
+
+async def reply_add(message, channel, percentile):
+    user_id = message.from_user.id
+    lang = message.from_user.language_code
     add_subscription(Subscription(user_id, channel, percentile))
-    percentile = PERCENTILE_HIGH if percentile == "high" else PERCENTILE_BASIC
-    await message.answer(create_message("add.subscription", lang, 100 - percentile, channel))
+
+    other_percentile = "basic" if percentile == "high" else "high"
+    change_percentile_button = InlineKeyboardButton(
+        create_message("change.subscription", lang, 100 - percentile_number(other_percentile)),
+        callback_data=f"set_percentile;{channel};{other_percentile}")
+    markup = InlineKeyboardMarkup().add(change_percentile_button)
+    text = create_message("add.subscription", lang, 100 - percentile_number(percentile), channel)
+    await message.bot.send_message(user_id, text, reply_markup=markup)
 
 
+async def process_callback_set_percentile(callback_query: types.CallbackQuery):
+    channel, percentile = callback_query.data.split(";")[1:]
+    await callback_query.answer()
+    await callback_query.message.delete()
+    await reply_add(callback_query, channel, percentile)
+
+
+def percentile_number(percentile):
+    return PERCENTILE_HIGH if percentile == "high" else PERCENTILE_BASIC

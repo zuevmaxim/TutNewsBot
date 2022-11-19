@@ -54,8 +54,9 @@ async def safe_call(f, message):
         await f()
     except Exception as e:
         logging.exception(e)
+        user_id = message.from_user.id
         lang = message.from_user.language_code
-        await message.answer(create_message("internal.error", lang))
+        await bot.send_message(user_id, create_message("internal.error", lang))
 
 
 @dp.message_handler(state='*', commands=['cancel'])
@@ -85,6 +86,11 @@ async def handle_add_subscription(message: types.Message):
 async def handle_subscription_name(message: types.Message, state: FSMContext):
     # This is a hack: cannot call get_channel from commands/add.py for some reason
     await safe_call(lambda: add.handle_subscription_name(message, lambda name: get_channel(name), state), message)
+
+
+@dp.callback_query_handler(lambda c: c.data.startswith("set_percentile;"))
+async def process_callback_set_percentile(callback_query: types.CallbackQuery):
+    await safe_call(lambda: add.process_callback_set_percentile(callback_query), callback_query)
 
 
 @dp.message_handler(commands=["remove"])
