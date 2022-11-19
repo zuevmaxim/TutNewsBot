@@ -78,7 +78,9 @@ async def notify_user(bot, user_id):
             if message.photo is not None:
                 await resend_file(message.photo.file_id, message, user_id, bot.send_photo)
             elif message.video is not None:
-                await resend_file(message.video.file_id, message, user_id, bot.send_video)
+                def send_video(*args, **kwargs):
+                    return bot.send_video(*args, **kwargs, width=message.video.width, height=message.video.height)
+                await resend_file(message.video.file_id, message, user_id, send_video)
             continue
         except Exception as e:
             logging.exception(e)
