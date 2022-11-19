@@ -1,4 +1,4 @@
-from aiogram import types
+from aiogram import types, Dispatcher
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import StatesGroup, State
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, KeyboardButton, ReplyKeyboardMarkup
@@ -43,6 +43,13 @@ async def handle_subscription_name(message: types.Message, get_channel, state: F
             await message.answer(create_message("channel.not.found", lang, channel))
             return
         raise e
+
+    # delete to remove keyboard
+    async with state.proxy() as data:
+        if "my_message" in data:
+            my_message = data["my_message"]
+            await my_message.delete()
+
     await state.finish()
     subscription = get_subscription(message.from_user.id, channel)
     if subscription is not None:
@@ -78,14 +85,18 @@ def percentile_number(percentile):
 
 async def handle_change_subscription(message: types.Message):
     await Change.chanel_name.set()
-    await reply_choose_channel(message)
+    await reply_choose_channel(message, Dispatcher.get_current().current_state())
 
 
-async def reply_choose_channel(message):
+async def reply_choose_channel(message, state: FSMContext = None):
     user_id = message.from_user.id
     lang = message.from_user.language_code
     channels = get_subscription_names(user_id)
     markup = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True, row_width=2)
     for channel in channels:
         markup.insert(KeyboardButton(f"@{channel}"))
-    await message.answer(create_message("choose.channel", lang), reply_markup=markup)
+    answer = await message.answer(create_message("choose.channel", lang), reply_markup=markup)
+    # save to remove keyboard later
+    if state is not None:
+        async with state.proxy() as data:
+            data["my_message"] = answer

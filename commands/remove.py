@@ -27,6 +27,8 @@ async def handle_subscription_name(message: types.Message, state: FSMContext):
     await state.finish()
     result = remove_subscription(user_id, subscription)
     if result:
-        await message.answer(create_message("remove.subscription", lang, f"@{subscription}"))
+        await message.answer(create_message("remove.subscription", lang, f"@{subscription}"),
+                             reply_markup=types.ReplyKeyboardRemove())
     else:
-        await message.answer(create_message("remove.subscription.unknown", lang, subscription))
+        await message.answer(create_message("remove.subscription.unknown", lang, subscription),
+                             reply_markup=types.ReplyKeyboardRemove())
