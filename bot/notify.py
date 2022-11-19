@@ -10,7 +10,7 @@ from data.news import *
 from data.statistics import *
 from data.subscriptions import *
 from data.users import *
-from scrolling import lock, get_messages, load_file
+from scrolling import get_messages, load_file
 
 stop = False
 MAX_CAPTION_LENGTH = 500
@@ -47,23 +47,22 @@ async def notify_user(bot, user_id):
     user_subscriptions = get_subscriptions(user_id)
     chosen_posts = []
     for subscription in user_subscriptions:
-        async with lock:
-            posts = get_posts(subscription.channel, subscription.last_seen_post)
-            posts = [post for post in posts if post.timestamp > hard_time_offset]
-            if len(posts) == 0:
-                continue
-            stat = get_statistics(subscription.channel)
-            if stat is None:
-                logging.warning(f"Cannot notify user, as statistics fot channel {subscription.channel} is not ready")
-                continue
-            comments, reactions = stat.get_percentiles(subscription.percentile)
-            posts = [post for post in posts if post.comments > comments or post.reactions > reactions]
-            if len(posts) == 0:
-                continue
-            last_post_id = posts[-1].post_id
-            update_last_seen_post(user_id, subscription.channel, last_post_id)
-            posts = list(zip(posts, await get_messages(subscription.channel, [post.post_id for post in posts])))
-            chosen_posts += posts
+        posts = get_posts(subscription.channel, subscription.last_seen_post)
+        posts = [post for post in posts if post.timestamp > hard_time_offset]
+        if len(posts) == 0:
+            continue
+        stat = get_statistics(subscription.channel)
+        if stat is None:
+            logging.warning(f"Cannot notify user, as statistics fot channel {subscription.channel} is not ready")
+            continue
+        comments, reactions = stat.get_percentiles(subscription.percentile)
+        posts = [post for post in posts if post.comments > comments or post.reactions > reactions]
+        if len(posts) == 0:
+            continue
+        last_post_id = posts[-1].post_id
+        update_last_seen_post(user_id, subscription.channel, last_post_id)
+        posts = list(zip(posts, await get_messages(subscription.channel, [post.post_id for post in posts])))
+        chosen_posts += posts
     chosen_posts.sort(key=lambda post: post[0].timestamp)
     for post, message in chosen_posts:
         await sleep(notification_single_timeout_s)
@@ -80,6 +79,7 @@ async def notify_user(bot, user_id):
             elif message.video is not None:
                 def send_video(*args, **kwargs):
                     return bot.send_video(*args, **kwargs, width=message.video.width, height=message.video.height)
+
                 await resend_file(message.video.file_id, message, user_id, send_video)
             continue
         except Exception as e:
@@ -130,8 +130,7 @@ async def scheduled_statistics():
     await sleep(initial_timeout_s)
     while True:
         try:
-            async with lock:
-                update_statistics()
+            update_statistics()
         except Exception as e:
             logging.exception(e)
         if stop:
