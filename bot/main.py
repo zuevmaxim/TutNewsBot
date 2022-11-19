@@ -11,7 +11,6 @@ import commands.news
 import commands.remove
 import commands.start
 from bot.config import *
-from commands import add
 from data.utils import close_db
 from messages import create_message
 from notify import init_notification, stop_notifications
@@ -86,7 +85,9 @@ async def handle_add_subscription(message: types.Message):
 @dp.message_handler(state=[commands.add.Add.chanel_name, commands.add.Change.chanel_name])
 async def handle_subscription_name(message: types.Message, state: FSMContext):
     # This is a hack: cannot call get_channel from commands/add.py for some reason
-    await safe_call(lambda: add.handle_subscription_name(message, lambda name: get_channel(name), state), message)
+    await safe_call(lambda: commands.add.handle_subscription_name(message, lambda name: get_channel(name), state),
+                    message)
+
 
 @dp.message_handler(commands=["setup"])
 async def handle_change_subscription(message: types.Message):
@@ -95,12 +96,17 @@ async def handle_change_subscription(message: types.Message):
 
 @dp.callback_query_handler(lambda c: c.data.startswith("set_percentile;"))
 async def process_callback_set_percentile(callback_query: types.CallbackQuery):
-    await safe_call(lambda: add.process_callback_set_percentile(callback_query), callback_query)
+    await safe_call(lambda: commands.add.process_callback_set_percentile(callback_query), callback_query)
 
 
 @dp.message_handler(commands=["remove"])
 async def handle_remove_subscription(message: types.Message):
     await safe_call(lambda: commands.remove.handle_remove_subscription(message), message)
+
+
+@dp.message_handler(state=[commands.remove.Remove.chanel_name])
+async def handle_remove_subscription_name(message: types.Message, state: FSMContext):
+    await safe_call(lambda: commands.remove.handle_subscription_name(message, state), message)
 
 
 @dp.message_handler(commands=["news"])
