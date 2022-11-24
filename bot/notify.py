@@ -3,7 +3,6 @@ import logging
 from asyncio import sleep
 
 import numpy as np
-from pyrogram.enums import MessageEntityType
 
 from bot.config import *
 from data.news import *
@@ -69,8 +68,8 @@ async def notify_user(bot, user_id):
         link = f"https://t.me/{post.channel}/{post.post_id}"
         logging.info(f"Send message to {user_id}: {link} #comments={post.comments} #reactions={post.reactions}")
         if message.text is not None:
-            text = to_markdown(message.text, message.entities)
-            await bot.send_message(user_id, parse_mode="markdown", text=create_text(message, text),
+            text = message.text.html
+            await bot.send_message(user_id, parse_mode="html", text=create_text(message, text),
                                    disable_web_page_preview=True)
             continue
         try:
@@ -91,39 +90,18 @@ async def notify_user(bot, user_id):
 
 async def resend_file(file_id, message, user_id, send):
     file = await load_file(file_id)
-    text = to_markdown(message.caption, message.entities)
+    text = message.caption.html if message.caption is not None else ""
     if len(text) > MAX_CAPTION_LENGTH:
         text = text[:MAX_CAPTION_LENGTH] + "..."
     try:
         with open(file, "rb") as f:
-            await send(user_id, f, parse_mode="markdown", caption=create_text(message, text))
+            await send(user_id, f, parse_mode="html", caption=create_text(message, text))
     finally:
         os.remove(file)
 
 
 def create_text(message, text):
-    return f"*{message.chat.title}:*\n{text}\n[{message.chat.username}]({message.link})"
-
-
-def to_markdown(text, entities):
-    if text is None:
-        return ""
-    if entities is None or len(entities) == 0:
-        return text
-    new_text = text[:entities[0].offset]
-    for i, e in enumerate(entities):
-        if e.type == MessageEntityType.BOLD:
-            c = '*'
-        elif e.type == MessageEntityType.ITALIC:
-            c = '_'
-        else:
-            c = ''
-        new_text += c + text[e.offset: e.offset + e.length] + c
-        if i + 1 == len(entities):
-            new_text += text[e.offset + e.length:]
-        else:
-            new_text += text[e.offset + e.length: entities[i + 1].offset]
-    return new_text
+    return f"<b>{message.chat.title}:</b>\n{text}\n<a href=\"{message.link}\">{message.chat.username}</a>"
 
 
 async def scheduled_statistics():
