@@ -9,7 +9,6 @@ english_messages = {
     "channel.not.found": "Cannot find '{}' channel. Please check name",
     "remove.subscription": "I won't notify you about posts from {} channel",
     "remove.subscription.unknown": "Cannot unsubscribe from '{}' as you haven't been subscribed for this channel",
-    "no.news": "There is no interesting news",
     "command.start": "Start bot",
     "command.add": "Add subscription for a channel",
     "command.change": "Change notification level of a subscription",
@@ -17,11 +16,7 @@ english_messages = {
     "command.remove": "Remove subscription",
     "command.cancel": "Cancel the current operation",
     "command.cancel.reaction": "Command canceled",
-    "bad.type.of.channel": "It is not a channel. Try something else",
-    "list.subscriptions.empty": "You have no subscriptions",
-    "list.subscriptions": "Your subscriptions:",
-    "list.subscriptions.element.with.stat": "{} ({} comments, {} reactions)",
-    "list.subscriptions.element": "{}",
+    "bad.type.of.channel": "It's not a channel. Try something else",
     "internal.error": "Internal bot error",
 }
 
@@ -36,7 +31,6 @@ russian_messages = {
     "channel.not.found": "Не могу найти '{}' канал. Укажи другое название",
     "remove.subscription": "Я отменил подписку на {}",
     "remove.subscription.unknown": "Не могу отменить подписку на '{}'. Ты не подписан на этот канал",
-    "no.news": "Интересных новостей больше нет",
     "command.start": "Запустить бот",
     "command.add": "Добавить подписку на канал",
     "command.change": "Изменить количество уведомлений для подписки",
@@ -45,10 +39,6 @@ russian_messages = {
     "command.cancel": "Отменить текущую операцию",
     "command.cancel.reaction": "Команда отменена",
     "bad.type.of.channel": "Это не канал, попробуй что-нибудь ещё",
-    "list.subscriptions.empty": "У тебя нет ни одной подписки",
-    "list.subscriptions": "Твои подписки:",
-    "list.subscriptions.element.with.stat": "{} ({} комментариев, {} реакций)",
-    "list.subscriptions.element": "{}",
     "internal.error": "У меня произошла ошибка",
 }
 

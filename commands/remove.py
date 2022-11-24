@@ -5,7 +5,7 @@ from aiogram.dispatcher.filters.state import StatesGroup, State
 from bot.messages import create_message
 from bot.utils import extract_chanel_name
 from commands.add import reply_choose_channel
-from data.subscriptions import *
+from storage.subscriptions_storage import SubscriptionStorage
 
 
 class Remove(StatesGroup):
@@ -20,15 +20,16 @@ async def handle_remove_subscription(message: types.Message):
 async def handle_subscription_name(message: types.Message, state: FSMContext):
     user_id = message.from_user.id
     lang = message.from_user.language_code
-    subscription = extract_chanel_name(message.text)
-    if len(subscription) == 0:
+    channel = extract_chanel_name(message.text)
+    if len(channel) == 0:
         await message.answer(create_message("empty.channel.name", lang))
         return
     await state.finish()
-    result = remove_subscription(user_id, subscription)
-    if result:
-        await message.answer(create_message("remove.subscription", lang, f"@{subscription}"),
+    subscription = SubscriptionStorage.get_subscription(user_id, channel)
+    if subscription is not None:
+        SubscriptionStorage.remove_subscription(user_id, channel)
+        await message.answer(create_message("remove.subscription", lang, f"@{channel}"),
                              reply_markup=types.ReplyKeyboardRemove())
     else:
-        await message.answer(create_message("remove.subscription.unknown", lang, subscription),
+        await message.answer(create_message("remove.subscription.unknown", lang, channel),
                              reply_markup=types.ReplyKeyboardRemove())

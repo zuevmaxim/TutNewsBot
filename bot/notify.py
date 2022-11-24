@@ -1,17 +1,17 @@
 import asyncio
 import logging
 from asyncio import sleep
+from collections import defaultdict
 
 import numpy as np
 from aiogram.types import MessageEntity, MessageEntityType
 from pyrogram import types
 
 from bot.config import *
-from data.news import *
-from data.statistics import *
-from data.subscriptions import *
-from data.users import *
 from scrolling import get_messages, load_file
+from storage.posts_storage import PostsStorage
+from storage.statistic_storage import Statistic, StatisticStorage
+from storage.subscriptions_storage import SubscriptionStorage
 
 stop = False
 MAX_CAPTION_LENGTH = 900
@@ -23,84 +23,87 @@ def stop_notifications():
 
 
 def update_statistics():
-    for channel in get_subscription_names():
-        if stop:
-            return
-        posts = get_posts(channel)
-        if len(posts) == 0:
-            continue
-        reactions_high, reactions_basic = np.percentile([post.reactions for post in posts],
-                                                        [PERCENTILE_HIGH, PERCENTILE_BASIC])
-        comments_high, comments_basic = np.percentile([post.comments for post in posts],
-                                                      [PERCENTILE_HIGH, PERCENTILE_BASIC])
-        logging.info(f"Update statistics for channel '{channel}' "
-                     f"#reactions_high={int(reactions_high)}"
-                     f"#reactions_basic={int(reactions_basic)}"
-                     f"#comments_high={int(comments_high)}"
-                     f"#comments_basic={int(comments_basic)}")
-        add_statistic(Stat(channel, reactions_high, reactions_basic, comments_high, comments_basic))
-    delete_posts_before(datetime.now() - news_drop_time)
+    posts = PostsStorage.get_posts()
+    reactions = defaultdict(list)
+    comments = defaultdict(list)
+    for post in posts:
+        channel, comment, reaction = post.channel_id, post.comments, post.reactions
+        reactions[channel].append(reaction)
+        comments[channel].append(comment)
+    values = []
+    for channel in reactions.keys():
+        rp = np.percentile(reactions[channel], INTERESTING_PERCENTILES)
+        cp = np.percentile(comments[channel], INTERESTING_PERCENTILES)
+        for i, p in enumerate(INTERESTING_PERCENTILES):
+            values.append(Statistic(channel, p, cp[i], rp[i]))
+    StatisticStorage.update(values)
+    PostsStorage.delete_old_posts(datetime.datetime.now() - news_drop_time)
 
 
-async def notify_user(bot, user_id):
-    logging.info(f"Start notification session for {user_id}")
-    hard_time_offset = datetime.now() - hard_time_window
-    user_subscriptions = get_subscriptions(user_id)
-    chosen_posts = []
-    for subscription in user_subscriptions:
-        posts = get_posts(subscription.channel, subscription.last_seen_post)
-        posts = [post for post in posts if post.timestamp > hard_time_offset]
-        if len(posts) == 0:
-            continue
-        stat = get_statistics(subscription.channel)
-        if stat is None:
-            logging.warning(f"Cannot notify user, as statistics fot channel {subscription.channel} is not ready")
-            continue
-        comments, reactions = stat.get_percentiles(subscription.percentile)
-        posts = [post for post in posts if post.comments > comments or post.reactions > reactions]
-        if len(posts) == 0:
-            continue
-        last_post_id = posts[-1].post_id
-        update_last_seen_post(user_id, subscription.channel, last_post_id)
-        posts = list(zip(posts, await get_messages(subscription.channel, [post.post_id for post in posts])))
-        chosen_posts += posts
-    chosen_posts.sort(key=lambda post: post[0].timestamp)
-    for post, message in chosen_posts:
+def update_seen_posts(posts):
+    res = defaultdict(list)
+    for post in posts:
+        res[(post.channel, post.user_id)].append(post.post_id)
+    max_ids = [(channel, user_id, max(post_ids)) for (channel, user_id), post_ids in res.items()]
+    SubscriptionStorage.update(max_ids)
+
+
+async def notify(bot):
+    hard_time_offset = datetime.datetime.now() - hard_time_window
+    posts = PostsStorage.get_notification_posts(hard_time_offset)
+    if len(posts) == 0:
+        return
+    logging.info("Start notification session")
+    res = defaultdict(set)
+    for post in posts:
+        res[post.channel].add(post.post_id)
+    loaded = {}
+    for channel, post_ids in res.items():
+        post_ids = list(post_ids)
+        messages = await get_messages(channel, post_ids)
+        for post_id, message in zip(post_ids, messages):
+            loaded[(channel, post_id)] = message
+    update_seen_posts(posts)
+    file_cache = {}
+    for post in posts:
+        user_id = post.user_id
         await sleep(notification_single_timeout_s)
-        link = f"https://t.me/{post.channel}/{post.post_id}"
-        logging.info(f"Send message to {user_id}: {link} #comments={post.comments} #reactions={post.reactions}")
-        if message.text is not None:
-            text, entities = create_text(message, message.text)
-            await bot.send_message(user_id, text=text, entities=entities,
-                                   disable_web_page_preview=True)
-            continue
+        message = loaded[(post.channel, post.post_id)]
+        logging.info(f"Send message to {user_id}: {message.link}")
         try:
+            if message.text is not None:
+                text, entities = create_text(message, message.text)
+                await bot.send_message(user_id, text=text, entities=entities,
+                                       disable_web_page_preview=True)
+                continue
             if message.photo is not None:
-                await resend_file(message.photo.file_id, message, user_id, bot.send_photo)
-            elif message.video is not None:
+                await resend_file(message.photo.file_id, message, user_id, bot.send_photo, file_cache)
+                continue
+            elif message.video is not None and message.video.file_size < 5 * 10 ** 7:
                 def send_video(*args, **kwargs):
                     return bot.send_video(*args, **kwargs, width=message.video.width, height=message.video.height)
 
-                await resend_file(message.video.file_id, message, user_id, send_video)
-            continue
+                await resend_file(message.video.file_id, message, user_id, send_video, file_cache)
+                continue
         except Exception as e:
             logging.exception(e)
-        await bot.send_message(user_id, parse_mode="markdown", text=f"[{message.chat.title}]({link})")
+        await bot.send_message(user_id, parse_mode="markdown", text=f"[{message.chat.title}]({message.link})")
+    for file in file_cache.values():
+        os.remove(file)
 
-    return len(chosen_posts)
 
-
-async def resend_file(file_id, message, user_id, send):
-    file = await load_file(file_id)
+async def resend_file(file_id, message, user_id, send, file_cache):
+    if file_id in file_cache:
+        file = file_cache[file_id]
+    else:
+        file = await load_file(file_id)
+        file_cache[file_id] = file
     text = message.caption if message.caption is not None else ""
     if len(text) > MAX_CAPTION_LENGTH:
         text = text[:MAX_CAPTION_LENGTH] + "..."
     text, entities = create_text(message, text)
-    try:
-        with open(file, "rb") as f:
-            await send(user_id, f, caption=text, caption_entities=entities)
-    finally:
-        os.remove(file)
+    with open(file, "rb") as f:
+        await send(user_id, f, caption=text, caption_entities=entities)
 
 
 def create_text(message: types.Message, text: str):
@@ -144,11 +147,10 @@ async def scheduled_statistics():
 async def scheduled_notification(bot):
     await sleep(initial_timeout_s)
     while True:
+        if stop:
+            return
         try:
-            for user in get_users():
-                if stop:
-                    return
-                await notify_user(bot, user.user_id)
+            await notify(bot)
         except Exception as e:
             logging.exception(e)
         if stop:

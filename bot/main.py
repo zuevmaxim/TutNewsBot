@@ -6,15 +6,13 @@ from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters import Text
 
 import commands.add
-import commands.list
-import commands.news
 import commands.remove
 import commands.start
 from bot.config import *
-from data.utils import close_db
 from messages import create_message
 from notify import init_notification, stop_notifications
 from scrolling import init_scrolling, get_channel, stop_scrolling
+from storage.postgres import db
 
 formatter = logging.Formatter("%(asctime)s [%(levelname)-7.7s]  %(message)s")
 handlers = [
@@ -44,7 +42,7 @@ async def init_bot(dp, lang="en"):
 
 
 async def shutdown_bot(dp):
-    close_db()
+    db.close()
     stop_scrolling()
     stop_notifications()
 
@@ -83,8 +81,7 @@ async def handle_add_subscription(message: types.Message):
 @dp.message_handler(state=[commands.add.Add.chanel_name, commands.add.Change.chanel_name])
 async def handle_subscription_name(message: types.Message, state: FSMContext):
     # This is a hack: cannot call get_channel from commands/add.py for some reason
-    await safe_call(lambda: commands.add.handle_subscription_name(message, lambda name: get_channel(name), state),
-                    message)
+    await safe_call(lambda: commands.add.handle_subscription_name(message, get_channel, state), message)
 
 
 @dp.message_handler(commands=["setup"])
@@ -105,16 +102,6 @@ async def handle_remove_subscription(message: types.Message):
 @dp.message_handler(state=[commands.remove.Remove.chanel_name])
 async def handle_remove_subscription_name(message: types.Message, state: FSMContext):
     await safe_call(lambda: commands.remove.handle_subscription_name(message, state), message)
-
-
-@dp.message_handler(commands=["news"])
-async def handle_news(message: types.Message):
-    await safe_call(lambda: commands.news.handle_news(message), message)
-
-
-@dp.message_handler(commands=["list"])
-async def handle_list(message: types.Message):
-    await safe_call(lambda: commands.list.handle_list(message), message)
 
 
 if __name__ == "__main__":

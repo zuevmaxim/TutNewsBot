@@ -1,5 +1,4 @@
 *.session*
-/bd/*
 /.idea
 *.env
 *__pycache__*

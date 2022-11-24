@@ -18,12 +18,12 @@ scrolling_timeout_s = int(get_env_or("SCROLLING_TIMEOUT_MIN", 10)) * MINUTE
 scrolling_single_timeout_s = 0.5
 
 hard_time_window = datetime.timedelta(days=1)
-soft_time_window = datetime.timedelta(hours=3)
+soft_time_window = datetime.timedelta(hours=6)
 news_drop_time = datetime.timedelta(weeks=1)
 
 notification_timeout_s = int(get_env_or("NOTIFICATION_TIMEOUT_MIN", 15)) * MINUTE
 notification_single_timeout_s = 0.5
 
 statistics_update_s = 10 * MINUTE
-PERCENTILE_HIGH = 90
-PERCENTILE_BASIC = 80
+INTERESTING_PERCENTILES = [75, 80, 90, 95]
+DEFAULT_PERCENTILE = 80

@@ -5,10 +5,10 @@ from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, KeyboardBu
 from pyrogram.enums import ChatType
 from pyrogram.errors import BadRequest
 
-from bot.config import PERCENTILE_HIGH, PERCENTILE_BASIC
+from bot.config import DEFAULT_PERCENTILE, INTERESTING_PERCENTILES
 from bot.messages import create_message
 from bot.utils import extract_chanel_name
-from data.subscriptions import *
+from storage.subscriptions_storage import SubscriptionStorage, Subscription
 
 
 class Add(StatesGroup):
@@ -51,36 +51,35 @@ async def handle_subscription_name(message: types.Message, get_channel, state: F
             await my_message.delete()
 
     await state.finish()
-    subscription = get_subscription(message.from_user.id, channel)
+    subscription = SubscriptionStorage.get_subscription(message.from_user.id, channel)
     if subscription is not None:
         await reply_subscription(message, channel, subscription.percentile, "existing.subscription")
     else:
-        await reply_subscription(message, channel, "basic")
+        await reply_subscription(message, channel, DEFAULT_PERCENTILE)
 
 
 async def reply_subscription(message, channel, percentile, message_key="add.subscription"):
     user_id = message.from_user.id
     lang = message.from_user.language_code
-    add_subscription(Subscription(user_id, channel, percentile))
+    SubscriptionStorage.add_subscription(Subscription(user_id, channel, percentile))
 
-    other_percentile = "basic" if percentile == "high" else "high"
-    change_percentile_button = InlineKeyboardButton(
-        create_message("change.subscription", lang, 100 - percentile_number(other_percentile)),
-        callback_data=f"set_percentile;{channel};{other_percentile}")
-    markup = InlineKeyboardMarkup().add(change_percentile_button)
-    text = create_message(message_key, lang, 100 - percentile_number(percentile), f"@{channel}")
+    percentiles = list(INTERESTING_PERCENTILES)
+    percentiles.remove(percentile)
+    markup = InlineKeyboardMarkup()
+    for p in percentiles:
+        button = InlineKeyboardButton(create_message("change.subscription", lang, 100 - p),
+                                      callback_data=f"set_percentile;{channel};{p}")
+        markup.add(button)
+    text = create_message(message_key, lang, 100 - percentile, f"@{channel}")
     await message.bot.send_message(user_id, text, reply_markup=markup)
 
 
 async def process_callback_set_percentile(callback_query: types.CallbackQuery):
     channel, percentile = callback_query.data.split(";")[1:]
+    percentile = int(percentile)
     await callback_query.answer()
     await callback_query.message.delete()
     await reply_subscription(callback_query, channel, percentile)
-
-
-def percentile_number(percentile):
-    return PERCENTILE_HIGH if percentile == "high" else PERCENTILE_BASIC
 
 
 async def handle_change_subscription(message: types.Message):
@@ -91,7 +90,7 @@ async def handle_change_subscription(message: types.Message):
 async def reply_choose_channel(message, state: FSMContext = None):
     user_id = message.from_user.id
     lang = message.from_user.language_code
-    channels = get_subscription_names(user_id)
+    channels = SubscriptionStorage.get_subscription_names(user_id)
     markup = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True, row_width=2)
     for channel in channels:
         markup.insert(KeyboardButton(f"@{channel}"))

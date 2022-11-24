@@ -6,8 +6,8 @@ from pyrogram import Client
 from pyrogram.errors import BadRequest
 
 from bot.config import *
-from data.news import *
-from data.subscriptions import *
+from storage.posts_storage import PostsStorage, Post
+from storage.subscriptions_storage import SubscriptionStorage
 
 app = Client("scroller", api_id=api_id, api_hash=api_hash)
 
@@ -32,13 +32,13 @@ async def load_file(file_id):
 
 
 async def scheduled_scrolling():
-    first_scroll = True
     async with app:
         await sleep(initial_timeout_s)
+        first_run = True
         while True:
             try:
-                await scroll(first_scroll)
-                first_scroll = False
+                await scroll(first_run)
+                first_run = False
             except Exception as e:
                 logging.exception(e)
             if stop:
@@ -46,22 +46,21 @@ async def scheduled_scrolling():
             await sleep(scrolling_timeout_s)
 
 
-async def scroll(first_scroll):
-    for subscription in get_subscription_names():
-        # do not scroll messages earlier than one hour
-        soft_time_offset = datetime.datetime.now() - soft_time_window
+async def scroll(first_run):
+    posts = []
+    for c in SubscriptionStorage.get_channels():
+        channel_id, channel = c.id, c.channel
         hard_time_offset = datetime.datetime.now() - hard_time_window
+        soft_time_offset = datetime.datetime.now() - soft_time_window
 
-        chat = await get_channel(subscription)
+        chat = await get_channel(channel)
         has_comments = chat.linked_chat is not None
-        async for message in app.get_chat_history(chat_id=f"@{subscription}"):
+        async for message in app.get_chat_history(chat_id=f"@{channel}"):
             if stop:
                 return
             post_id = message.id
             timestamp = message.date
-            if timestamp < hard_time_offset:
-                break
-            if not first_scroll and timestamp < soft_time_offset and has_post(subscription, post_id):
+            if timestamp < hard_time_offset or not first_run and timestamp < soft_time_offset :
                 break
             reactions = 0
             if message.reactions is not None:
@@ -70,16 +69,16 @@ async def scroll(first_scroll):
             if has_comments:
                 await sleep(scrolling_single_timeout_s)
                 try:
-                    comments = await app.get_discussion_replies_count(f"@{subscription}", post_id)
+                    comments = await app.get_discussion_replies_count(f"@{channel}", post_id)
                 except BadRequest as e:
                     if message.media_group_id is not None:
                         continue
                     logging.warning(f"Failed to update comments in {message.link} {e.MESSAGE}")
-            add_post(Post(subscription, post_id, timestamp, comments, reactions))
-            logging.info(f"Update channel {subscription} post {post_id}, "
-                         f"#comments={comments}, "
-                         f"#reactions={reactions}")
+            posts.append(Post(channel_id, post_id, comments, reactions, timestamp))
+            logging.info(f"Update {message.link} #comments={comments}, #reactions={reactions}")
             await sleep(scrolling_single_timeout_s)
+        PostsStorage.add_posts(posts)
+        posts = []
 
 
 def init_scrolling():
