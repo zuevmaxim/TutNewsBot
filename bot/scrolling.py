@@ -1,8 +1,9 @@
 import asyncio
 import logging
 from asyncio import sleep
+from typing import List
 
-from pyrogram import Client
+from pyrogram import Client, types
 from pyrogram.errors import BadRequest
 
 from bot.config import *
@@ -19,15 +20,15 @@ def stop_scrolling():
     stop = True
 
 
-async def get_channel(channel):
+async def get_channel(channel: str):
     return await app.get_chat(chat_id=f"@{channel}")
 
 
-async def get_messages(channel, post_ids):
+async def get_messages(channel: str, post_ids: List[int]) -> List[types.Message]:
     return await app.get_messages(chat_id=f"@{channel}", message_ids=post_ids)
 
 
-async def load_file(file_id):
+async def load_file(file_id: str) -> str:
     return await app.download_media(file_id)
 
 
@@ -46,7 +47,7 @@ async def scheduled_scrolling():
             await sleep(scrolling_timeout_s)
 
 
-async def scroll(first_run):
+async def scroll(first_run: bool):
     posts = []
     for c in SubscriptionStorage.get_channels():
         channel_id, channel = c.id, c.channel

@@ -1,4 +1,4 @@
-def extract_chanel_name(name):
+def extract_chanel_name(name: str) -> str:
     name = name.strip()
     prefix = "https://t.me/"
     if name[:len(prefix)] == prefix:

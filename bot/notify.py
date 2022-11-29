@@ -2,6 +2,7 @@ import asyncio
 import logging
 from asyncio import sleep
 from collections import defaultdict
+from typing import List
 
 import numpy as np
 from aiogram.types import MessageEntity, MessageEntityType
@@ -9,7 +10,7 @@ from pyrogram import types
 
 from bot.config import *
 from scrolling import get_messages, load_file
-from storage.posts_storage import PostsStorage
+from storage.posts_storage import PostsStorage, PostNotification
 from storage.statistic_storage import Statistic, StatisticStorage
 from storage.subscriptions_storage import SubscriptionStorage
 
@@ -40,7 +41,7 @@ def update_statistics():
     PostsStorage.delete_old_posts(datetime.datetime.now() - news_drop_time)
 
 
-def update_seen_posts(posts):
+def update_seen_posts(posts: List[PostNotification]):
     res = defaultdict(list)
     for post in posts:
         res[(post.channel, post.user_id)].append(post.post_id)
@@ -92,7 +93,7 @@ async def notify(bot):
         os.remove(file)
 
 
-async def resend_file(file_id, message, user_id, send, file_cache):
+async def resend_file(file_id: str, message: types.Message, user_id: int, send, file_cache):
     if file_id in file_cache:
         file = file_cache[file_id]
     else:

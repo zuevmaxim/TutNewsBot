@@ -58,7 +58,7 @@ async def handle_subscription_name(message: types.Message, get_channel, state: F
         await reply_subscription(message, channel, DEFAULT_PERCENTILE)
 
 
-async def reply_subscription(message, channel, percentile, message_key="add.subscription"):
+async def reply_subscription(message, channel: str, percentile: int, message_key="add.subscription"):
     user_id = message.from_user.id
     lang = message.from_user.language_code
     SubscriptionStorage.add_subscription(Subscription(user_id, channel, percentile))
@@ -87,7 +87,7 @@ async def handle_change_subscription(message: types.Message):
     await reply_choose_channel(message, Dispatcher.get_current().current_state())
 
 
-async def reply_choose_channel(message, state: FSMContext = None):
+async def reply_choose_channel(message: types.Message, state: FSMContext = None):
     user_id = message.from_user.id
     lang = message.from_user.language_code
     channels = SubscriptionStorage.get_subscription_names(user_id)
