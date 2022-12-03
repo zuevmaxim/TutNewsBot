@@ -1,16 +1,4 @@
 services:
-  #  bot:
-  #    build:
-  #      context: "."
-  #      environment:
-  #        - BOT_TOKEN=${BOT_TOKEN}
-  #        - API_ID=${API_ID}
-  #        - API_HASH=${API_HASH}
-  #    expose:
-  #      - '8443'
-  #    ports:
-  #      - "8443:8443"
-  #    command: python bot/main.py
   db:
     image: postgres:latest
     container_name: postgres-bot
@@ -20,7 +8,6 @@ services:
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - POSTGRES_DB=${POSTGRES_DB}
-      - POSTGRES_HOST_AUTH_METHOD=trust
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready" ]
       interval: 10s
@@ -32,6 +19,9 @@ services:
       - '${POSTGRES_PORT}:${POSTGRES_PORT}'
     volumes:
       # to persist data
-      - ./storage/persist:/var/lib/postgresql/data
+      - db:/var/lib/postgresql/data
       # copy the sql script to create tables
       - ./storage/schema/bot.sql:/docker-entrypoint-initdb.d/create_tables.sql
+volumes:
+  db:
+    driver: local
