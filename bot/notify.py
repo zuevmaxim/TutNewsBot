@@ -3,6 +3,8 @@ import logging
 from asyncio import sleep
 
 import numpy as np
+from aiogram.types import MessageEntity, MessageEntityType
+from pyrogram import types
 
 from bot.config import *
 from data.news import *
@@ -12,7 +14,7 @@ from data.users import *
 from scrolling import get_messages, load_file
 
 stop = False
-MAX_CAPTION_LENGTH = 500
+MAX_CAPTION_LENGTH = 900
 
 
 def stop_notifications():
@@ -68,8 +70,8 @@ async def notify_user(bot, user_id):
         link = f"https://t.me/{post.channel}/{post.post_id}"
         logging.info(f"Send message to {user_id}: {link} #comments={post.comments} #reactions={post.reactions}")
         if message.text is not None:
-            text = message.text.html
-            await bot.send_message(user_id, parse_mode="html", text=create_text(message, text),
+            text, entities = create_text(message, message.text)
+            await bot.send_message(user_id, text=text, entities=entities,
                                    disable_web_page_preview=True)
             continue
         try:
@@ -90,18 +92,41 @@ async def notify_user(bot, user_id):
 
 async def resend_file(file_id, message, user_id, send):
     file = await load_file(file_id)
-    text = message.caption.html if message.caption is not None else ""
+    text = message.caption if message.caption is not None else ""
     if len(text) > MAX_CAPTION_LENGTH:
         text = text[:MAX_CAPTION_LENGTH] + "..."
+    text, entities = create_text(message, text)
     try:
         with open(file, "rb") as f:
-            await send(user_id, f, parse_mode="html", caption=create_text(message, text))
+            await send(user_id, f, caption=text, caption_entities=entities)
     finally:
         os.remove(file)
 
 
-def create_text(message, text):
-    return f"<b>{message.chat.title}:</b>\n{text}\n<a href=\"{message.link}\">{message.chat.username}</a>"
+def create_text(message: types.Message, text: str):
+    entities = message.entities if message.entities is not None else []
+
+    # repack entities from pyrogram to aiogram
+    entities = [MessageEntity(e.type.name.lower(), e.offset, e.length, e.url, e.user, e.language, e.custom_emoji_id) for e in entities]
+
+    # cut entities in case text is cut
+    entities = [e for e in entities if e.offset < len(text)]
+    for e in entities:
+        if e.offset + e.length > len(text):
+            e.length = len(text) - e.offset
+
+    # add chat name in the beginning
+    chat_name = f"{message.chat.title}:\n"
+    text = chat_name + text
+    for e in entities:
+        e.offset += len(chat_name)
+    entities = [MessageEntity(type=MessageEntityType.BOLD, offset=0, length=len(chat_name))] + entities
+
+    # add link in the end
+    link = f"\n{message.chat.username}"
+    entities.append(MessageEntity(MessageEntityType.TEXT_LINK, offset=len(text), length=len(link), url=message.link))
+    text += link
+    return text, entities
 
 
 async def scheduled_statistics():
