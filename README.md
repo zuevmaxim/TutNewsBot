@@ -1,6 +1,6 @@
-# TelegramAggregatorBot
-This bot aggregates the most popular posts from a selected list of channels
+# TutNews bot
 
+This bot aggregates the most popular posts from a selected list of channels
 
 ## How to build and run
 
@@ -8,13 +8,16 @@ This bot aggregates the most popular posts from a selected list of channels
     ```
     pip3 install -r requirements.txt
     ```
-
-2. Create databases
+2. Configure `BOT_TOKEN`, `API_ID`, and `API_HASH` environment variables.
+   ```
+   export $(grep -v '^#' env/release.env | xargs -d '\n')
+   ```
+3. Create and start container with databases
     ```
-    ./bd/create_bd.sh
+    docker-compose -f docker-compose.yaml up -d
     ```
-   
-3. Run `main.py`. Make sure that you have configured `BOT_TOKEN`, `API_ID` and `API_HASH` in environment variables.
-4. The scrolling application will ask for additional authentication via phone number, please contact project owners for details.
+4. Run `python3 bot/main.py`.
+5. The scrolling application will ask for additional authentication via phone number, please contact project owners for
+   details.
 
 
