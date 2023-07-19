@@ -48,6 +48,7 @@ async def scheduled_scrolling():
 
 
 async def scroll(first_run: bool):
+    logging.info("Start scrolling session")
     posts = []
     for c in SubscriptionStorage.get_channels():
         channel_id, channel = c.id, c.channel
@@ -76,7 +77,6 @@ async def scroll(first_run: bool):
                         continue
                     logging.warning(f"Failed to update comments in {message.link} {e.MESSAGE}")
             posts.append(Post(channel_id, post_id, comments, reactions, timestamp))
-            logging.info(f"Update {message.link} #comments={comments}, #reactions={reactions}")
             await sleep(scrolling_single_timeout_s)
         PostsStorage.add_posts(posts)
         posts = []
