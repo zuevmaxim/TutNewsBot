@@ -89,7 +89,7 @@ async def notify(bot):
 
 
 def clear_cache_dir():
-    shutil.rmtree("bot/downloads")
+    shutil.rmtree("bot/downloads", ignore_errors=True)
 
 
 async def send_message(bot, user_id, message, file_cache):
