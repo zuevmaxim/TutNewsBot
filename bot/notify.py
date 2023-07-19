@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import shutil
 from asyncio import sleep
 from collections import defaultdict
 from typing import List
@@ -51,6 +52,7 @@ def update_seen_posts(posts: List[PostNotification]):
 
 
 async def notify(bot):
+    clear_cache_dir()
     hard_time_offset = datetime.datetime.now() - hard_time_window
     posts = PostsStorage.get_notification_posts(hard_time_offset)
     if len(posts) == 0:
@@ -83,6 +85,11 @@ async def notify(bot):
             logging.exception(e)
     for file in file_cache.values():
         os.remove(file)
+    clear_cache_dir()
+
+
+def clear_cache_dir():
+    shutil.rmtree("bot/downloads")
 
 
 async def send_message(bot, user_id, message, file_cache):
