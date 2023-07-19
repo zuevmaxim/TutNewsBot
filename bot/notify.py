@@ -6,6 +6,7 @@ from typing import List
 
 import numpy as np
 from aiogram.types import MessageEntity, MessageEntityType
+from aiogram.utils.exceptions import BotBlocked
 from pyrogram import types
 
 from bot.config import *
@@ -66,31 +67,46 @@ async def notify(bot):
             loaded[(channel, post_id)] = message
     update_seen_posts(posts)
     file_cache = {}
+    disabled_users = set()
     for post in posts:
         user_id = post.user_id
+        if user_id in disabled_users:
+            continue
         await sleep(notification_single_timeout_s)
         message = loaded[(post.channel, post.post_id)]
-        logging.info(f"Send message to {user_id}: {message.link}")
         try:
-            if message.text is not None:
-                text, entities = create_text(message, message.text)
-                await bot.send_message(user_id, text=text, entities=entities,
-                                       disable_web_page_preview=True)
-                continue
-            if message.photo is not None:
-                await resend_file(message.photo.file_id, message, user_id, bot.send_photo, file_cache)
-                continue
-            elif message.video is not None and message.video.file_size < 5 * 10 ** 7:
-                def send_video(*args, **kwargs):
-                    return bot.send_video(*args, **kwargs, width=message.video.width, height=message.video.height)
-
-                await resend_file(message.video.file_id, message, user_id, send_video, file_cache)
-                continue
+            await send_message(bot, user_id, message, file_cache)
+        except BotBlocked:
+            logging.info(f"User {user_id} blocked the bot. Disable for this notification.")
+            disabled_users.add(user_id)
         except Exception as e:
             logging.exception(e)
-        await bot.send_message(user_id, parse_mode="markdown", text=f"[{message.chat.title}]({message.link})")
     for file in file_cache.values():
         os.remove(file)
+
+
+async def send_message(bot, user_id, message, file_cache):
+    logging.info(f"Send message to {user_id}: {message.link}")
+    try:
+        if message.text is not None:
+            text, entities = create_text(message, message.text)
+            await bot.send_message(user_id, text=text, entities=entities,
+                                   disable_web_page_preview=True)
+            return
+        if message.photo is not None:
+            await resend_file(message.photo.file_id, message, user_id, bot.send_photo, file_cache)
+            return
+        elif message.video is not None and message.video.file_size < 5 * 10 ** 7:
+            def send_video(*args, **kwargs):
+                return bot.send_video(*args, **kwargs, width=message.video.width, height=message.video.height)
+
+            await resend_file(message.video.file_id, message, user_id, send_video, file_cache)
+            return
+    except BotBlocked as e:
+        raise e
+    except Exception as e:
+        logging.exception(e)
+    await bot.send_message(user_id, parse_mode="markdown", text=f"[{message.chat.title}]({message.link})")
 
 
 async def resend_file(file_id: str, message: types.Message, user_id: int, send, file_cache):
