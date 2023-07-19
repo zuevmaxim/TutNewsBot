@@ -92,6 +92,7 @@ async def reply_choose_channel(message: types.Message, state: FSMContext = None)
     lang = message.from_user.language_code
     channels = SubscriptionStorage.get_subscription_names(user_id)
     markup = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True, row_width=2)
+    channels.sort()
     for channel in channels:
         markup.insert(KeyboardButton(f"@{channel}"))
     answer = await message.answer(create_message("choose.channel", lang), reply_markup=markup)
