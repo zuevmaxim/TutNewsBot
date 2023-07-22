@@ -86,6 +86,11 @@ async def scroll(first_run: bool):
         async for message in app.get_chat_history(chat_id=f"@{channel}"):
             if stop:
                 return
+
+            # ignore service messages
+            if message.service is not None:
+                continue
+
             post_id = message.id
             timestamp = message.date
             if timestamp < hard_time_offset or not first_run and timestamp < soft_time_offset :
