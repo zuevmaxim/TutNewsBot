@@ -33,6 +33,10 @@ async def handle_subscription_name(message: types.Message, get_channel, state: F
         await message.answer(create_message("empty.channel.name", lang))
         return
 
+    if channel.startswith("+"):
+        await message.answer(create_message("invitation.link.error", lang))
+        return
+
     try:
         chat = await get_channel(channel)
         public_chat = chat.type == ChatType.CHANNEL or\

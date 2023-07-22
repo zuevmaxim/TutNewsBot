@@ -18,6 +18,8 @@ english_messages = {
     "command.cancel.reaction": "Command canceled",
     "bad.type.of.channel": "It's not a channel. Try something else",
     "private.chat.error": "This is a private chat. I cannot scroll it :(",
+    "invitation.link.error": "This is an invitation link. Looks like I cannot scroll this channel. " +
+                             "Please send a link to a public channel",
     "internal.error": "Internal bot error",
 }
 
@@ -41,6 +43,7 @@ russian_messages = {
     "command.cancel.reaction": "Команда отменена",
     "bad.type.of.channel": "Это не канал, попробуй что-нибудь ещё",
     "private.chat.error": "Это приватный чат, я не могу его читать :(",
+    "invitation.link.error": "Это ссылка-приглашение. Я не смогу читать этот канал. Пришли ссылку на публичный канал",
     "internal.error": "У меня произошла ошибка",
 }
 
