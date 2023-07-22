@@ -39,11 +39,13 @@ async def handle_subscription_name(message: types.Message, get_channel, state: F
 
     try:
         chat = await get_channel(channel)
-        public_chat = chat.type == ChatType.CHANNEL or\
-                      (chat.type == ChatType.GROUP or chat.type == ChatType.SUPERGROUP) and chat.username is not None
+        public_chat = (chat.type == ChatType.CHANNEL or
+                       chat.type == ChatType.GROUP or
+                       chat.type == ChatType.SUPERGROUP) and chat.username is not None
         if not public_chat or chat.type == ChatType.PRIVATE or chat.type == ChatType.BOT:
             await message.answer(create_message("private.chat.error", lang, channel))
             return
+        channel = chat.username
     except BadRequest as e:
         if e.ID == "USERNAME_INVALID" or e.ID == "USERNAME_NOT_OCCUPIED":
             await message.answer(create_message("channel.not.found", lang, channel))
