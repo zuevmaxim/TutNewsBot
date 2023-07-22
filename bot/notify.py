@@ -5,7 +5,6 @@ from asyncio import sleep
 from collections import defaultdict
 from typing import List
 
-import numpy as np
 from aiogram.types import MessageEntity, MessageEntityType
 from aiogram.utils.exceptions import BotBlocked
 from pyrogram import types
@@ -13,7 +12,6 @@ from pyrogram import types
 from bot.config import *
 from scrolling import get_messages, load_file
 from storage.posts_storage import PostsStorage, PostNotification
-from storage.statistic_storage import Statistic, StatisticStorage
 from storage.subscriptions_storage import SubscriptionStorage
 
 stop = False
@@ -23,24 +21,6 @@ MAX_CAPTION_LENGTH = 900
 def stop_notifications():
     global stop
     stop = True
-
-
-def update_statistics():
-    posts = PostsStorage.get_posts()
-    reactions = defaultdict(list)
-    comments = defaultdict(list)
-    for post in posts:
-        channel, comment, reaction = post.channel_id, post.comments, post.reactions
-        reactions[channel].append(reaction)
-        comments[channel].append(comment)
-    values = []
-    for channel in reactions.keys():
-        rp = np.percentile(reactions[channel], INTERESTING_PERCENTILES)
-        cp = np.percentile(comments[channel], INTERESTING_PERCENTILES)
-        for i, p in enumerate(INTERESTING_PERCENTILES):
-            values.append(Statistic(channel, p, cp[i], rp[i]))
-    StatisticStorage.update(values)
-    PostsStorage.delete_old_posts(datetime.datetime.now() - news_drop_time)
 
 
 def update_seen_posts(posts: List[PostNotification]):
@@ -156,18 +136,6 @@ def create_text(message: types.Message, text: str):
     return text, entities
 
 
-async def scheduled_statistics():
-    await sleep(initial_timeout_s)
-    while True:
-        try:
-            update_statistics()
-        except Exception as e:
-            logging.exception(e)
-        if stop:
-            return
-        await sleep(statistics_update_s)
-
-
 async def scheduled_notification(bot):
     await sleep(initial_timeout_s)
     while True:
@@ -184,5 +152,4 @@ async def scheduled_notification(bot):
 
 def init_notification(bot):
     loop = asyncio.get_event_loop()
-    loop.create_task(scheduled_statistics())
     loop.create_task(scheduled_notification(bot))
