@@ -57,11 +57,9 @@ def update_statistics():
 async def scheduled_scrolling():
     async with app:
         await sleep(initial_timeout_s)
-        first_run = True
         while True:
             try:
-                await scroll(first_run)
-                first_run = False
+                await scroll()
             except Exception as e:
                 logging.exception(e)
             try:
@@ -73,11 +71,11 @@ async def scheduled_scrolling():
             await sleep(scrolling_timeout_s)
 
 
-async def scroll(first_run: bool):
+async def scroll():
     logging.info("Start scrolling session")
     posts = []
     for c in SubscriptionStorage.get_channels():
-        channel_id, channel = c.id, c.channel
+        channel_id, channel, is_empty = c.id, c.channel, c.is_empty
         hard_time_offset = datetime.datetime.now() - hard_time_window
         soft_time_offset = datetime.datetime.now() - soft_time_window
 
@@ -93,7 +91,7 @@ async def scroll(first_run: bool):
 
             post_id = message.id
             timestamp = message.date
-            if timestamp < hard_time_offset or not first_run and timestamp < soft_time_offset :
+            if timestamp < hard_time_offset or not is_empty and timestamp < soft_time_offset :
                 break
             reactions = 0
             if message.reactions is not None:

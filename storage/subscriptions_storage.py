@@ -21,6 +21,7 @@ class Subscription:
 class Channel:
     id: int
     channel: str
+    is_empty: bool
 
     @staticmethod
     def parse_json(json_data: dict):
@@ -39,9 +40,12 @@ class SubscriptionStorage:
 
     @staticmethod
     def get_channels() -> List[Channel]:
-        cursor = db.execute("SELECT DISTINCT Channel.id, Channel.name AS channel "
-                            "FROM Subscription "
-                            "JOIN Channel ON Channel.id = Subscription.channel_id")
+        cursor = db.execute(
+            "SELECT DISTINCT Channel.id, Channel.name AS channel, MIN(post.post_id) IS NULL as is_empty "
+            "FROM Subscription "
+            "JOIN Channel ON Channel.id = Subscription.channel_id "
+            "LEFT JOIN Post ON Channel.id = Post.channel_id "
+            "GROUP BY Channel.id, Channel.name")
         return list(map(Channel.parse_json, cursor))
 
     @staticmethod
