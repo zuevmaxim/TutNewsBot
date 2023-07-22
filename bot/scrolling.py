@@ -58,6 +58,7 @@ async def scheduled_scrolling():
     async with app:
         await sleep(initial_timeout_s)
         while True:
+            logging.info("Start scrolling session")
             try:
                 await scroll()
             except Exception as e:
@@ -66,19 +67,19 @@ async def scheduled_scrolling():
                 update_statistics()
             except Exception as e:
                 logging.exception(e)
+            logging.info("Complete scrolling session")
             if stop:
                 return
             await sleep(scrolling_timeout_s)
 
 
 async def scroll():
-    logging.info("Start scrolling session")
-    posts = []
     for c in SubscriptionStorage.get_channels():
         channel_id, channel, is_empty = c.id, c.channel, c.is_empty
         hard_time_offset = datetime.datetime.now() - hard_time_window
         soft_time_offset = datetime.datetime.now() - soft_time_window
 
+        posts = []
         chat = await get_channel(channel)
         has_comments = chat.type != ChatType.CHANNEL or chat.linked_chat is not None
         async for message in app.get_chat_history(chat_id=f"@{channel}"):
@@ -108,7 +109,7 @@ async def scroll():
             posts.append(Post(channel_id, post_id, comments, reactions, timestamp))
             await sleep(scrolling_single_timeout_s)
         PostsStorage.add_posts(posts)
-        posts = []
+        logging.info(f"Scrolled {len(posts)} posts in {channel}")
 
 
 def init_scrolling():
