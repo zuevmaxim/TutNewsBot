@@ -6,17 +6,18 @@ english_messages = {
     "change.subscription": "Notify about top {}%",
     "choose.channel": "Choose channel",
     "empty.channel.name": "Please specify channel name",
-    "channel.not.found": "Cannot find '{}' channel. Please check name",
+    "channel.not.found": "Cannot find '{}' channel. Please check the name",
     "remove.subscription": "I won't notify you about posts from {} channel",
     "remove.subscription.unknown": "Cannot unsubscribe from '{}' as you haven't been subscribed for this channel",
     "command.start": "Start bot",
     "command.add": "Add subscription for a channel",
     "command.change": "Change notification level of a subscription",
-    "write.channel.name": "Please write the name of the channel",
+    "write.channel.name": "Please write the name of a channel",
     "command.remove": "Remove subscription",
     "command.cancel": "Cancel the current operation",
     "command.cancel.reaction": "Command canceled",
     "bad.type.of.channel": "It's not a channel. Try something else",
+    "private.chat.error": "This is a private chat. I cannot scroll it :(",
     "internal.error": "Internal bot error",
 }
 
@@ -39,6 +40,7 @@ russian_messages = {
     "command.cancel": "Отменить текущую операцию",
     "command.cancel.reaction": "Команда отменена",
     "bad.type.of.channel": "Это не канал, попробуй что-нибудь ещё",
+    "private.chat.error": "Это приватный чат, я не могу его читать :(",
     "internal.error": "У меня произошла ошибка",
 }
 

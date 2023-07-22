@@ -6,6 +6,7 @@ from typing import List
 
 import numpy as np
 from pyrogram import Client, types
+from pyrogram.enums import ChatType
 from pyrogram.errors import BadRequest
 
 from bot.config import *
@@ -81,7 +82,7 @@ async def scroll(first_run: bool):
         soft_time_offset = datetime.datetime.now() - soft_time_window
 
         chat = await get_channel(channel)
-        has_comments = chat.linked_chat is not None
+        has_comments = chat.type != ChatType.CHANNEL or chat.linked_chat is not None
         async for message in app.get_chat_history(chat_id=f"@{channel}"):
             if stop:
                 return

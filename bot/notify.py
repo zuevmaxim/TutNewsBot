@@ -8,6 +8,7 @@ from typing import List
 from aiogram.types import MessageEntity, MessageEntityType
 from aiogram.utils.exceptions import BotBlocked
 from pyrogram import types
+from pyrogram.enums import ChatType
 
 from bot.config import *
 from scrolling import get_messages, load_file
@@ -123,7 +124,12 @@ def create_text(message: types.Message, text: str):
             e.length = len(text) - e.offset
 
     # add chat name in the beginning
-    chat_name = f"{message.chat.title}:\n"
+    if message.chat.type == ChatType.CHANNEL:
+        chat_name = f"{message.chat.title}:\n"
+    else:
+        author = f"{message.from_user.first_name} {message.from_user.last_name}"
+        chat_name = f"{message.chat.title} ({author}):\n"
+
     text = chat_name + text
     for e in entities:
         e.offset += len(chat_name)
