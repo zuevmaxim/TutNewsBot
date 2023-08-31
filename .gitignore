@@ -2,6 +2,5 @@
 /.idea
 *.env
 *__pycache__*
-*.sh
 *.log
 storage/persist
