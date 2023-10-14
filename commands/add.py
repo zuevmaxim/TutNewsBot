@@ -52,13 +52,14 @@ async def handle_subscription_name(message: types.Message, get_channel, state: F
             return
         raise e
 
-    # delete to remove keyboard
-    async with state.proxy() as data:
-        if "my_message" in data:
-            my_message = data["my_message"]
-            await my_message.delete()
+    if state is not None:
+        # delete to remove keyboard
+        async with state.proxy() as data:
+            if "my_message" in data:
+                my_message = data["my_message"]
+                await my_message.delete()
 
-    await state.finish()
+        await state.finish()
     subscription = SubscriptionStorage.get_subscription(message.from_user.id, channel)
     if subscription is not None:
         await reply_subscription(message, channel, subscription.percentile, "existing.subscription")

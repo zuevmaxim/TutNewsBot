@@ -104,6 +104,11 @@ async def handle_remove_subscription_name(message: types.Message, state: FSMCont
     await safe_call(lambda: commands.remove.handle_subscription_name(message, state), message)
 
 
+@dp.message_handler()
+async def text_add_handler(message: types.Message):
+    await safe_call(lambda: commands.add.handle_subscription_name(message, get_channel, None), message)
+
+
 if __name__ == "__main__":
     init_scrolling()
     init_notification(bot)
