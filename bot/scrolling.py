@@ -2,6 +2,7 @@ import asyncio
 import logging
 from asyncio import sleep
 from collections import defaultdict
+from enum import Enum
 from typing import List
 
 import numpy as np
@@ -24,8 +25,25 @@ def stop_scrolling():
     stop = True
 
 
-async def get_channel(channel: str):
-    return await app.get_chat(chat_id=f"@{channel}")
+class GetChatStatus(Enum):
+    SUCCESS = "success"
+    USER_NOT_EXIST = "user does not exist"
+    PRIVATE_CHAT = "chat is private"
+
+
+async def safe_get_channel(channel: str):
+    try:
+        chat = await app.get_chat(chat_id=f"@{channel}")
+        public_chat = (chat.type == ChatType.CHANNEL or
+                       chat.type == ChatType.GROUP or
+                       chat.type == ChatType.SUPERGROUP) and chat.username is not None
+        if not public_chat or chat.type == ChatType.PRIVATE or chat.type == ChatType.BOT:
+            return GetChatStatus.PRIVATE_CHAT, chat
+        return GetChatStatus.SUCCESS, chat
+    except BadRequest as e:
+        if e.ID == "USERNAME_INVALID" or e.ID == "USERNAME_NOT_OCCUPIED":
+            return GetChatStatus.USER_NOT_EXIST, None
+        raise e
 
 
 async def get_messages(channel: str, post_ids: List[int]) -> List[types.Message]:
@@ -80,7 +98,10 @@ async def scroll():
         soft_time_offset = datetime.datetime.now() - soft_time_window
 
         posts = []
-        chat = await get_channel(channel)
+        status, chat = await safe_get_channel(channel)
+        if status != GetChatStatus.SUCCESS:
+            logging.warning(f"Failed to get chat {channel}: {status}")
+            continue
         has_comments = chat.type != ChatType.CHANNEL or chat.linked_chat is not None
         async for message in app.get_chat_history(chat_id=f"@{channel}"):
             if stop:
@@ -92,7 +113,7 @@ async def scroll():
 
             post_id = message.id
             timestamp = message.date
-            if timestamp < hard_time_offset or not is_empty and timestamp < soft_time_offset :
+            if timestamp < hard_time_offset or not is_empty and timestamp < soft_time_offset:
                 break
             reactions = 0
             if message.reactions is not None:

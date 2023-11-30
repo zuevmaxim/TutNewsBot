@@ -11,7 +11,7 @@ import commands.start
 from bot.config import *
 from messages import create_message
 from notify import init_notification, stop_notifications
-from scrolling import init_scrolling, get_channel, stop_scrolling
+from scrolling import init_scrolling, safe_get_channel, stop_scrolling
 from storage.postgres import db
 
 formatter = logging.Formatter("%(asctime)s [%(levelname)-7.7s]  %(message)s")
@@ -81,7 +81,7 @@ async def handle_add_subscription(message: types.Message):
 @dp.message_handler(state=[commands.add.Add.chanel_name, commands.add.Change.chanel_name])
 async def handle_subscription_name(message: types.Message, state: FSMContext):
     # This is a hack: cannot call get_channel from commands/add.py for some reason
-    await safe_call(lambda: commands.add.handle_subscription_name(message, get_channel, state), message)
+    await safe_call(lambda: commands.add.handle_subscription_name(message, safe_get_channel, state), message)
 
 
 @dp.message_handler(commands=["setup"])
@@ -106,7 +106,7 @@ async def handle_remove_subscription_name(message: types.Message, state: FSMCont
 
 @dp.message_handler()
 async def text_add_handler(message: types.Message):
-    await safe_call(lambda: commands.add.handle_subscription_name(message, get_channel, None), message)
+    await safe_call(lambda: commands.add.handle_subscription_name(message, safe_get_channel, None), message)
 
 
 if __name__ == "__main__":
