@@ -44,10 +44,13 @@ async def notify(bot):
         res[post.channel].add(post.post_id)
     loaded = {}
     for channel, post_ids in res.items():
-        post_ids = list(post_ids)
-        messages = await get_messages(channel, post_ids)
-        for post_id, message in zip(post_ids, messages):
-            loaded[(channel, post_id)] = message
+        try:
+            post_ids = list(post_ids)
+            messages = await get_messages(channel, post_ids)
+            for post_id, message in zip(post_ids, messages):
+                loaded[(channel, post_id)] = message
+        except Exception as e:
+            logging.exception(e)
     update_seen_posts(posts)
     file_cache = {}
     disabled_users = set()

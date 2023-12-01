@@ -9,6 +9,7 @@ import numpy as np
 from pyrogram import Client, types
 from pyrogram.enums import ChatType
 from pyrogram.errors import BadRequest
+from pyrogram.types import Chat
 
 from bot.config import *
 from storage.posts_storage import PostsStorage, Post
@@ -90,47 +91,55 @@ async def scheduled_scrolling():
                 return
             await sleep(scrolling_timeout_s)
 
+async def collect_chat_history(chat: Chat, channel_id: int, channel: str, is_empty: bool):
+    hard_time_offset = datetime.datetime.now() - hard_time_window
+    soft_time_offset = datetime.datetime.now() - soft_time_window
+    posts = []
+    has_comments = chat.type != ChatType.CHANNEL or chat.linked_chat is not None
+    async for message in app.get_chat_history(chat_id=f"@{channel}"):
+        if stop:
+            return posts
+
+        # ignore service messages
+        if message.service is not None:
+            continue
+
+        post_id = message.id
+        timestamp = message.date
+        if timestamp < hard_time_offset or not is_empty and timestamp < soft_time_offset:
+            break
+        reactions = 0
+        if message.reactions is not None:
+            reactions = sum([reaction.count for reaction in message.reactions.reactions])
+        comments = 0
+        if has_comments:
+            await sleep(scrolling_single_timeout_s)
+            try:
+                comments = await app.get_discussion_replies_count(f"@{channel}", post_id)
+            except BadRequest as e:
+                if message.media_group_id is not None:
+                    continue
+                logging.warning(f"Failed to update comments in {message.link} {e.MESSAGE}")
+        posts.append(Post(channel_id, post_id, comments, reactions, timestamp))
+        await sleep(scrolling_single_timeout_s)
+    return posts
+
 
 async def scroll():
     for c in SubscriptionStorage.get_channels():
-        channel_id, channel, is_empty = c.id, c.channel, c.is_empty
-        hard_time_offset = datetime.datetime.now() - hard_time_window
-        soft_time_offset = datetime.datetime.now() - soft_time_window
-
-        posts = []
-        status, chat = await safe_get_channel(channel)
-        if status != GetChatStatus.SUCCESS:
-            logging.warning(f"Failed to get chat {channel}: {status}")
-            continue
-        has_comments = chat.type != ChatType.CHANNEL or chat.linked_chat is not None
-        async for message in app.get_chat_history(chat_id=f"@{channel}"):
+        try:
+            channel = c.channel
+            status, chat = await safe_get_channel(channel)
+            if status != GetChatStatus.SUCCESS:
+                logging.warning(f"Failed to get chat {channel}: {status}")
+                continue
+            posts = await collect_chat_history(chat, c.id, channel, c.is_empty)
             if stop:
                 return
-
-            # ignore service messages
-            if message.service is not None:
-                continue
-
-            post_id = message.id
-            timestamp = message.date
-            if timestamp < hard_time_offset or not is_empty and timestamp < soft_time_offset:
-                break
-            reactions = 0
-            if message.reactions is not None:
-                reactions = sum([reaction.count for reaction in message.reactions.reactions])
-            comments = 0
-            if has_comments:
-                await sleep(scrolling_single_timeout_s)
-                try:
-                    comments = await app.get_discussion_replies_count(f"@{channel}", post_id)
-                except BadRequest as e:
-                    if message.media_group_id is not None:
-                        continue
-                    logging.warning(f"Failed to update comments in {message.link} {e.MESSAGE}")
-            posts.append(Post(channel_id, post_id, comments, reactions, timestamp))
-            await sleep(scrolling_single_timeout_s)
-        PostsStorage.add_posts(posts)
-        logging.info(f"Scrolled {len(posts)} posts in {channel}")
+            PostsStorage.add_posts(posts)
+            logging.info(f"Scrolled {len(posts)} posts in {channel}")
+        except Exception as e:
+            logging.exception(e)
 
 
 def init_scrolling():
