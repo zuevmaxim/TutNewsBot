@@ -60,6 +60,7 @@ async def notify(bot):
             continue
         await sleep(notification_single_timeout_s)
         message = loaded[(post.channel, post.post_id)]
+        logging.info(f"Send message to {user_id}: {post.channel} {post.post_id}")
         try:
             await send_message(bot, user_id, message, file_cache)
         except BotBlocked:
@@ -77,7 +78,6 @@ def clear_cache_dir():
 
 
 async def send_message(bot, user_id, message, file_cache):
-    logging.info(f"Send message to {user_id}: {message.link}")
     try:
         if message.text is not None:
             text, entities = create_text(message, message.text)
