@@ -119,7 +119,11 @@ async def collect_chat_history(chat: Chat, channel_id: int, channel: str, is_emp
             except BadRequest as e:
                 if message.media_group_id is not None:
                     continue
-                logging.warning(f"Failed to update comments in {message.link} {e.MESSAGE}")
+                if e.ID == 'MSG_ID_INVALID':
+                    # no comments for the post (commercial or something else)
+                    pass
+                else:
+                    logging.warning(f"Failed to update comments in {message.link} {e.MESSAGE}")
         posts.append(Post(channel_id, post_id, comments, reactions, timestamp))
         await sleep(scrolling_single_timeout_s)
     return posts
