@@ -52,7 +52,7 @@ async def notify(bot):
                 loaded[(channel, post_id)] = message
         except Exception as e:
             logging.exception(e)
-    update_seen_posts(posts)
+    sent_posts = []
     file_cache = {}
     disabled_users = set()
     for post in posts:
@@ -64,11 +64,13 @@ async def notify(bot):
         logging.info(f"Send message to {user_id}: {post.channel} {post.post_id}")
         try:
             await send_message(bot, user_id, message, file_cache)
+            sent_posts.append(post)
         except TelegramForbiddenError:
             logging.info(f"User {user_id} blocked the bot. Disable for this notification.")
             disabled_users.add(user_id)
         except Exception as e:
             logging.exception(e)
+    update_seen_posts(sent_posts)
     for file in file_cache.values():
         os.remove(file)
     clear_cache_dir()
