@@ -4,3 +4,4 @@
 *__pycache__*
 *.log
 storage/persist
+load_log.sh
