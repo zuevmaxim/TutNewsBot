@@ -116,6 +116,13 @@ async def resend_file(file_id: str, message: types.Message, user_id: int, send, 
     await send(user_id, FSInputFile(file), caption=text, caption_entities=entities)
 
 
+def utf16len(s):
+    # Encode the string into UTF-16 (result includes BOM)
+    # Each UTF-16 symbol is represented by 2 bytes
+    # We subtract 2 to get rid of Byte Order Mark
+    return len(s.encode('utf-16')) // 2 - 1
+
+
 def create_text(message: types.Message, text: str):
     entities = message.entities if message.entities is not None else []
 
@@ -137,14 +144,17 @@ def create_text(message: types.Message, text: str):
         chat_name = f"{message.chat.title} ({author}):\n"
 
     text = chat_name + text
+    utf_16_chat_name_length = utf16len(chat_name)
     for e in entities:
-        e.offset += len(chat_name)
-    entities = [MessageEntity(type=MessageEntityType.BOLD, offset=0, length=len(chat_name))] + entities
+        e.offset += utf_16_chat_name_length
+    entities = [MessageEntity(type=MessageEntityType.BOLD, offset=0, length=utf_16_chat_name_length)] + entities
 
     # add link in the end
     link = f"\n{message.chat.username}"
-    entities.append(MessageEntity(type=MessageEntityType.TEXT_LINK, offset=len(text),
-                                  length=len(link), url=message.link))
+    utf16_text_length = utf16len(text)
+    utf_16_link_length = utf16len(link)
+    entities.append(MessageEntity(type=MessageEntityType.TEXT_LINK, offset=utf16_text_length,
+                                  length=utf_16_link_length, url=message.link))
     text += link
     return text, entities
 
