@@ -1,7 +1,6 @@
-tgcrypto
-pysondb
-aiogram
-Pyrogram
+tgcrypto==1.2.5
+aiogram==3.2.0
+Pyrogram==2.0.106
 numpy
-psycopg2-binary
-dacite
+psycopg2-binary==2.9.9
+dacite==1.8.1

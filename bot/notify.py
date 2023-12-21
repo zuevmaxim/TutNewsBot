@@ -5,8 +5,9 @@ from asyncio import sleep
 from collections import defaultdict
 from typing import List
 
-from aiogram.types import MessageEntity, MessageEntityType
-from aiogram.utils.exceptions import BotBlocked
+from aiogram.enums import MessageEntityType
+from aiogram.exceptions import TelegramForbiddenError
+from aiogram.types import MessageEntity, FSInputFile
 from pyrogram import types
 from pyrogram.enums import ChatType
 
@@ -63,7 +64,7 @@ async def notify(bot):
         logging.info(f"Send message to {user_id}: {post.channel} {post.post_id}")
         try:
             await send_message(bot, user_id, message, file_cache)
-        except BotBlocked:
+        except TelegramForbiddenError:
             logging.info(f"User {user_id} blocked the bot. Disable for this notification.")
             disabled_users.add(user_id)
         except Exception as e:
@@ -93,7 +94,7 @@ async def send_message(bot, user_id, message, file_cache):
 
             await resend_file(message.video.file_id, message, user_id, send_video, file_cache)
             return
-    except BotBlocked as e:
+    except TelegramForbiddenError as e:
         raise e
     except Exception as e:
         logging.exception(e)
@@ -110,15 +111,15 @@ async def resend_file(file_id: str, message: types.Message, user_id: int, send, 
     if len(text) > MAX_CAPTION_LENGTH:
         text = text[:MAX_CAPTION_LENGTH] + "..."
     text, entities = create_text(message, text)
-    with open(file, "rb") as f:
-        await send(user_id, f, caption=text, caption_entities=entities)
+    await send(user_id, FSInputFile(file), caption=text, caption_entities=entities)
 
 
 def create_text(message: types.Message, text: str):
     entities = message.entities if message.entities is not None else []
 
     # repack entities from pyrogram to aiogram
-    entities = [MessageEntity(e.type.name.lower(), e.offset, e.length, e.url, e.user, e.language, e.custom_emoji_id) for e in entities]
+    entities = [MessageEntity(type=e.type.name.lower(), offset=e.offset, length=e.length, url=e.url, user=e.user,
+                              language=e.language, custom_emoji_id=e.custom_emoji_id) for e in entities]
 
     # cut entities in case text is cut
     entities = [e for e in entities if e.offset < len(text)]
@@ -140,7 +141,8 @@ def create_text(message: types.Message, text: str):
 
     # add link in the end
     link = f"\n{message.chat.username}"
-    entities.append(MessageEntity(MessageEntityType.TEXT_LINK, offset=len(text), length=len(link), url=message.link))
+    entities.append(MessageEntity(type=MessageEntityType.TEXT_LINK, offset=len(text),
+                                  length=len(link), url=message.link))
     text += link
     return text, entities
 

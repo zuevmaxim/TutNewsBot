@@ -1,9 +1,10 @@
+import asyncio
 import logging
 
-from aiogram import Bot, Dispatcher, types, executor
-from aiogram.contrib.fsm_storage.memory import MemoryStorage
-from aiogram.dispatcher import FSMContext
-from aiogram.dispatcher.filters import Text
+from aiogram import Bot, Dispatcher, types
+from aiogram.filters import CommandStart, Command, StateFilter
+from aiogram.fsm.context import FSMContext
+from aiogram.fsm.storage.memory import MemoryStorage
 
 import commands.add
 import commands.remove
@@ -25,23 +26,22 @@ for handler in handlers:
     handler.setLevel(logging.INFO)
     logging.getLogger().addHandler(handler)
 
-bot = Bot(token=bot_token)
 storage = MemoryStorage()
-dp = Dispatcher(bot, storage=storage)
+dp = Dispatcher(storage=storage)
 
 
-async def init_bot(dp, lang="en"):
-    await dp.bot.set_my_commands(
+async def init_bot(bot, lang="en"):
+    await bot.set_my_commands(
         [
-            types.BotCommand("add", create_message("command.add", lang)),
-            types.BotCommand("setup", create_message("command.change", lang)),
-            types.BotCommand("remove", create_message("command.remove", lang)),
-            types.BotCommand("cancel", create_message("command.cancel", lang)),
+            types.BotCommand(command="add", description=create_message("command.add", lang)),
+            types.BotCommand(command="setup", description=create_message("command.change", lang)),
+            types.BotCommand(command="remove", description=create_message("command.remove", lang)),
+            types.BotCommand(command="cancel", description=create_message("command.cancel", lang)),
         ]
     )
 
 
-async def shutdown_bot(dp):
+def shutdown_bot():
     db.close()
     stop_scrolling()
     stop_notifications()
@@ -52,64 +52,73 @@ async def safe_call(f, message):
         await f()
     except Exception as e:
         logging.exception(e)
-        user_id = message.from_user.id
         lang = message.from_user.language_code
-        await bot.send_message(user_id, create_message("internal.error", lang))
+        await message.answer(create_message("internal.error", lang))
 
 
-@dp.message_handler(state='*', commands=['cancel'])
-@dp.message_handler(Text(equals='cancel', ignore_case=True), state='*')
+@dp.message(Command('cancel'))
 async def cancel_handler(message: types.Message, state: FSMContext):
     lang = message.from_user.language_code
     current_state = await state.get_state()
     if current_state is not None:
         logging.info('Cancelling state %r', current_state)
-        await state.finish()
+        await state.clear()
     await message.answer(create_message("command.cancel.reaction", lang), reply_markup=types.ReplyKeyboardRemove())
 
 
-@dp.message_handler(commands=["start"])
+@dp.message(CommandStart())
 async def handle_start(message: types.Message):
     await safe_call(lambda: commands.start.handle_start(message), message)
 
 
-@dp.message_handler(commands=["add"])
-async def handle_add_subscription(message: types.Message):
-    await safe_call(lambda: commands.add.handle_add_subscription(message), message)
+@dp.message(Command('add'))
+async def handle_add_subscription(message: types.Message, state: FSMContext):
+    await safe_call(lambda: commands.add.handle_add_subscription(message, state), message)
 
 
-@dp.message_handler(state=[commands.add.Add.chanel_name, commands.add.Change.chanel_name])
+@dp.message(StateFilter(commands.add.Add.chanel_name, commands.add.Change.chanel_name))
 async def handle_subscription_name(message: types.Message, state: FSMContext):
     # This is a hack: cannot call get_channel from commands/add.py for some reason
     await safe_call(lambda: commands.add.handle_subscription_name(message, safe_get_channel, state), message)
 
 
-@dp.message_handler(commands=["setup"])
-async def handle_change_subscription(message: types.Message):
-    await safe_call(lambda: commands.add.handle_change_subscription(message), message)
+@dp.message(Command('setup'))
+async def handle_change_subscription(message: types.Message, state: FSMContext):
+    await safe_call(lambda: commands.add.handle_change_subscription(message, state), message)
 
 
-@dp.callback_query_handler(lambda c: c.data.startswith("set_percentile;"))
+@dp.callback_query(lambda c: c.data.startswith("set_percentile;"))
 async def process_callback_set_percentile(callback_query: types.CallbackQuery):
     await safe_call(lambda: commands.add.process_callback_set_percentile(callback_query), callback_query)
 
 
-@dp.message_handler(commands=["remove"])
-async def handle_remove_subscription(message: types.Message):
-    await safe_call(lambda: commands.remove.handle_remove_subscription(message), message)
+@dp.message(Command('remove'))
+async def handle_remove_subscription(message: types.Message, state: FSMContext):
+    await safe_call(lambda: commands.remove.handle_remove_subscription(message, state), message)
 
 
-@dp.message_handler(state=[commands.remove.Remove.chanel_name])
+@dp.message(StateFilter(commands.remove.Remove.chanel_name))
 async def handle_remove_subscription_name(message: types.Message, state: FSMContext):
     await safe_call(lambda: commands.remove.handle_subscription_name(message, state), message)
 
 
-@dp.message_handler()
+@dp.message()
 async def text_add_handler(message: types.Message):
     await safe_call(lambda: commands.add.handle_subscription_name(message, safe_get_channel, None), message)
 
 
+async def main(bot: Bot):
+    await init_bot(bot)
+    await bot.delete_webhook(drop_pending_updates=True)
+    await dp.start_polling(bot)
+
+
 if __name__ == "__main__":
-    init_scrolling()
-    init_notification(bot)
-    executor.start_polling(dp, on_startup=init_bot, on_shutdown=shutdown_bot, skip_updates=True)
+    try:
+        bot = Bot(token=bot_token)
+        init_scrolling()
+        init_notification(bot)
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(main(bot))
+    finally:
+        shutdown_bot()
