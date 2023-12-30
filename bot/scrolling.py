@@ -91,6 +91,7 @@ async def scheduled_scrolling():
                 return
             await sleep(scrolling_timeout_s)
 
+
 async def collect_chat_history(chat: Chat, channel_id: int, channel: str, is_empty: bool):
     hard_time_offset = datetime.datetime.now() - hard_time_window
     soft_time_offset = datetime.datetime.now() - soft_time_window
@@ -141,7 +142,7 @@ async def scroll():
             if stop:
                 return
             PostsStorage.add_posts(posts)
-            logging.info(f"Scrolled {len(posts)} posts in {channel}")
+            logging.debug(f"Scrolled {len(posts)} posts in {channel}")
         except Exception as e:
             logging.exception(e)
 

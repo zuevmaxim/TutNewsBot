@@ -61,7 +61,7 @@ async def notify(bot):
             continue
         await sleep(notification_single_timeout_s)
         message = loaded[(post.channel, post.post_id)]
-        logging.info(f"Send message to {user_id}: {post.channel} {post.post_id}")
+        logging.debug(f"Send message to {user_id}: {post.channel} {post.post_id}")
         try:
             await send_message(bot, user_id, message, file_cache)
             sent_posts.append(post)
