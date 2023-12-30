@@ -7,7 +7,8 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder, ReplyKeyboardBuilder
 
 from bot.config import DEFAULT_PERCENTILE, INTERESTING_PERCENTILES
 from bot.messages import create_message
-from bot.scrolling import GetChatStatus
+from bot.scrolling import trigger_scrolling
+from bot.scrolling_utils import GetChatStatus
 from bot.utils import extract_chanel_name
 from storage.subscriptions_storage import SubscriptionStorage, Subscription
 
@@ -74,6 +75,7 @@ async def reply_subscription(message, channel: str, percentile: int, message_key
     builder.adjust(1)
     text = create_message(message_key, lang, 100 - percentile, f"@{channel}")
     await message.bot.send_message(chat_id=user_id, text=text, reply_markup=builder.as_markup())
+    trigger_scrolling()
 
 
 async def process_callback_set_percentile(callback_query: types.CallbackQuery):

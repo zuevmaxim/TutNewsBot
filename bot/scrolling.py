@@ -2,61 +2,24 @@ import asyncio
 import logging
 from asyncio import sleep
 from collections import defaultdict
-from enum import Enum
-from typing import List
 
 import numpy as np
-from pyrogram import Client, types
 from pyrogram.enums import ChatType
 from pyrogram.errors import BadRequest
 from pyrogram.types import Chat
 
 from bot.config import *
+from bot.context import Context
+from bot.notify import trigger_notification
+from bot.scrolling_utils import app, GetChatStatus, safe_get_channel
+from bot.utils import wait_unless_triggered
 from storage.posts_storage import PostsStorage, Post
 from storage.statistic_storage import Statistic, StatisticStorage
 from storage.subscriptions_storage import SubscriptionStorage
 
-app = Client("scroller", api_id=api_id, api_hash=api_hash)
 
-stop = False
-
-
-def stop_scrolling():
-    global stop
-    stop = True
-
-
-class GetChatStatus(Enum):
-    SUCCESS = "success"
-    USER_NOT_EXIST = "user does not exist"
-    PRIVATE_CHAT = "chat is private"
-
-
-async def safe_get_channel(channel: str):
-    try:
-        chat = await app.get_chat(chat_id=f"@{channel}")
-        # ChatType.PRIVATE and ChatType.BOT are restricted
-        is_chat_or_channel = chat.type == ChatType.CHANNEL or \
-                             chat.type == ChatType.GROUP or \
-                             chat.type == ChatType.SUPERGROUP
-        if is_chat_or_channel:
-            if chat.username is None:
-                # some channel may have no ID set for samo reason
-                chat.username = channel
-            return GetChatStatus.SUCCESS, chat
-        return GetChatStatus.PRIVATE_CHAT, chat
-    except BadRequest as e:
-        if e.ID == "USERNAME_INVALID" or e.ID == "USERNAME_NOT_OCCUPIED":
-            return GetChatStatus.USER_NOT_EXIST, None
-        raise e
-
-
-async def get_messages(channel: str, post_ids: List[int]) -> List[types.Message]:
-    return await app.get_messages(chat_id=f"@{channel}", message_ids=post_ids)
-
-
-async def load_file(file_id: str) -> str:
-    return await app.download_media(file_id)
+def trigger_scrolling():
+    Context().scrolling_event.set()
 
 
 def update_statistics():
@@ -80,7 +43,8 @@ def update_statistics():
 async def scheduled_scrolling():
     async with app:
         await sleep(initial_timeout_s)
-        while True:
+        triggered = False
+        while not Context().stop:
             logging.info("Start scrolling session")
             try:
                 await scroll()
@@ -91,9 +55,11 @@ async def scheduled_scrolling():
             except Exception as e:
                 logging.exception(e)
             logging.info("Complete scrolling session")
-            if stop:
+            if Context().stop:
                 return
-            await sleep(scrolling_timeout_s)
+            if triggered:
+                trigger_notification()
+            triggered = await wait_unless_triggered(scrolling_timeout_s, Context().scrolling_event)
 
 
 async def collect_chat_history(chat: Chat, channel_id: int, channel: str, is_empty: bool):
@@ -102,7 +68,7 @@ async def collect_chat_history(chat: Chat, channel_id: int, channel: str, is_emp
     posts = []
     has_comments = chat.type != ChatType.CHANNEL or chat.linked_chat is not None
     async for message in app.get_chat_history(chat_id=f"@{channel}"):
-        if stop:
+        if Context().stop:
             return posts
 
         # ignore service messages
@@ -143,7 +109,7 @@ async def scroll():
                 logging.warning(f"Failed to get chat {channel}: {status}")
                 continue
             posts = await collect_chat_history(chat, c.id, channel, c.is_empty)
-            if stop:
+            if Context().stop:
                 return
             PostsStorage.add_posts(posts)
             logging.debug(f"Scrolled {len(posts)} posts in {channel}")

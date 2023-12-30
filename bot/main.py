@@ -10,14 +10,16 @@ import commands.add
 import commands.remove
 import commands.start
 from bot.config import *
+from bot.context import Context
 from messages import create_message
-from notify import init_notification, stop_notifications
-from scrolling import init_scrolling, safe_get_channel, stop_scrolling
+from notify import init_notification
+from scrolling import init_scrolling
+from bot.scrolling_utils import safe_get_channel
 from storage.postgres import db
 
 formatter = logging.Formatter("%(asctime)s [%(levelname)-7.7s]  %(message)s")
 handlers = [
-    logging.FileHandler("bot.log", mode="w"),
+    logging.FileHandler("bot.log", mode="a"),
     logging.StreamHandler(),
 ]
 logging.getLogger().setLevel(logging.INFO)
@@ -43,8 +45,7 @@ async def init_bot(bot, lang="en"):
 
 def shutdown_bot():
     db.close()
-    stop_scrolling()
-    stop_notifications()
+    Context().stop = True
 
 
 async def safe_call(f, message):
@@ -115,6 +116,11 @@ async def main(bot: Bot):
 
 if __name__ == "__main__":
     try:
+        context = Context()
+        context.stop = False
+        context.scrolling_event = asyncio.Event()
+        context.notification_event = asyncio.Event()
+
         bot = Bot(token=bot_token)
         init_scrolling()
         init_notification(bot)

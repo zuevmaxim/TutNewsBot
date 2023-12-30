@@ -12,17 +12,17 @@ from pyrogram import types
 from pyrogram.enums import ChatType
 
 from bot.config import *
-from scrolling import get_messages, load_file
+from bot.context import Context
+from bot.scrolling_utils import get_messages, load_file
+from bot.utils import wait_unless_triggered
 from storage.posts_storage import PostsStorage, PostNotification
 from storage.subscriptions_storage import SubscriptionStorage
 
-stop = False
 MAX_CAPTION_LENGTH = 900
 
 
-def stop_notifications():
-    global stop
-    stop = True
+def trigger_notification():
+    Context().notification_event.set()
 
 
 def update_seen_posts(posts: List[PostNotification]):
@@ -38,6 +38,7 @@ async def notify(bot):
     hard_time_offset = datetime.datetime.now() - hard_time_window
     posts = PostsStorage.get_notification_posts(hard_time_offset)
     if len(posts) == 0:
+        logging.info("Notification is not needed: no new posts")
         return
     logging.info("Start notification session")
     res = defaultdict(set)
@@ -74,6 +75,7 @@ async def notify(bot):
     for file in file_cache.values():
         os.remove(file)
     clear_cache_dir()
+    logging.info("Complete notification session")
 
 
 def clear_cache_dir():
@@ -162,15 +164,15 @@ def create_text(message: types.Message, text: str):
 async def scheduled_notification(bot):
     await sleep(initial_timeout_s)
     while True:
-        if stop:
+        if Context().stop:
             return
         try:
             await notify(bot)
         except Exception as e:
             logging.exception(e)
-        if stop:
+        if Context().stop:
             return
-        await sleep(notification_timeout_s)
+        await wait_unless_triggered(notification_timeout_s, Context().notification_event)
 
 
 def init_notification(bot):
