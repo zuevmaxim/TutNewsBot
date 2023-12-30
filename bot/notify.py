@@ -128,7 +128,7 @@ def create_text(message: types.Message, text: str):
 
     # repack entities from pyrogram to aiogram
     entities = [MessageEntity(type=e.type.name.lower(), offset=e.offset, length=e.length, url=e.url, user=e.user,
-                              language=e.language, custom_emoji_id=e.custom_emoji_id) for e in entities]
+                              language=e.language, custom_emoji_id=str(e.custom_emoji_id)) for e in entities]
 
     # cut entities in case text is cut
     entities = [e for e in entities if e.offset < len(text)]
