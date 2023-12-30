@@ -13,7 +13,7 @@ from bot.context import Context
 from bot.notify import trigger_notification
 from bot.scrolling_utils import app, GetChatStatus, safe_get_channel
 from bot.utils import wait_unless_triggered
-from storage.posts_storage import PostsStorage, Post
+from storage.posts_storage import PostsStorage, Post, Attachment
 from storage.statistic_storage import Statistic, StatisticStorage
 from storage.subscriptions_storage import SubscriptionStorage
 
@@ -62,12 +62,14 @@ async def scheduled_scrolling():
             triggered = await wait_unless_triggered(scrolling_timeout_s, Context().scrolling_event)
 
 
-async def collect_chat_history(chat: Chat, channel_id: int, channel: str, is_empty: bool):
+async def collect_chat_history(chat: Chat, channel_id: int, channel_name: str, is_empty: bool):
     hard_time_offset = datetime.datetime.now() - hard_time_window
     soft_time_offset = datetime.datetime.now() - soft_time_window
     posts = []
     has_comments = chat.type != ChatType.CHANNEL or chat.linked_chat is not None
-    async for message in app.get_chat_history(chat_id=f"@{channel}"):
+    media_groups = defaultdict(list)
+
+    async for message in app.get_chat_history(chat_id=f"@{channel_name}"):
         if Context().stop:
             return posts
 
@@ -79,6 +81,8 @@ async def collect_chat_history(chat: Chat, channel_id: int, channel: str, is_emp
         timestamp = message.date
         if timestamp < hard_time_offset or not is_empty and timestamp < soft_time_offset:
             break
+        if message.media_group_id is not None:
+            media_groups[(channel_id, message.media_group_id)].append(post_id)
         reactions = 0
         if message.reactions is not None:
             reactions = sum([reaction.count for reaction in message.reactions.reactions])
@@ -86,7 +90,7 @@ async def collect_chat_history(chat: Chat, channel_id: int, channel: str, is_emp
         if has_comments:
             await sleep(scrolling_single_timeout_s)
             try:
-                comments = await app.get_discussion_replies_count(f"@{channel}", post_id)
+                comments = await app.get_discussion_replies_count(f"@{channel_name}", post_id)
             except BadRequest as e:
                 if message.media_group_id is not None:
                     continue
@@ -97,22 +101,32 @@ async def collect_chat_history(chat: Chat, channel_id: int, channel: str, is_emp
                     logging.warning(f"Failed to update comments in {message.link} {e.MESSAGE}")
         posts.append(Post(channel_id, post_id, comments, reactions, timestamp))
         await sleep(scrolling_single_timeout_s)
-    return posts
+
+    attachments = []
+    for (channel_id, media_group), post_ids in media_groups.items():
+        main_post_id = min(post_ids)
+        post_ids.remove(main_post_id)
+        assert len(post_ids) > 0
+        for post_id in post_ids:
+            attachments.append(Attachment(channel_id, main_post_id, post_id))
+
+    return posts, attachments
 
 
 async def scroll():
     for c in SubscriptionStorage.get_channels():
         try:
-            channel = c.channel
-            status, chat = await safe_get_channel(channel)
+            channel_name = c.channel
+            status, chat = await safe_get_channel(channel_name)
             if status != GetChatStatus.SUCCESS:
-                logging.warning(f"Failed to get chat {channel}: {status}")
+                logging.warning(f"Failed to get chat {channel_name}: {status}")
                 continue
-            posts = await collect_chat_history(chat, c.id, channel, c.is_empty)
+            posts, attachments = await collect_chat_history(chat, c.id, channel_name, c.is_empty)
             if Context().stop:
                 return
             PostsStorage.add_posts(posts)
-            logging.debug(f"Scrolled {len(posts)} posts in {channel}")
+            PostsStorage.add_attachments(attachments)
+            logging.debug(f"Scrolled {len(posts)} posts in {channel_name}")
         except Exception as e:
             logging.exception(e)
 

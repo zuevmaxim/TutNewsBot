@@ -3,11 +3,12 @@ import logging
 import shutil
 from asyncio import sleep
 from collections import defaultdict
-from typing import List
+from typing import List, Tuple, Dict
 
 from aiogram.enums import MessageEntityType
 from aiogram.exceptions import TelegramForbiddenError
 from aiogram.types import MessageEntity, FSInputFile
+from aiogram.utils.media_group import MediaGroupBuilder
 from pyrogram import types
 from pyrogram.enums import ChatType
 
@@ -33,17 +34,36 @@ def update_seen_posts(posts: List[PostNotification]):
     SubscriptionStorage.update(max_ids)
 
 
+def filter_original_posts(posts: List[PostNotification]) -> \
+        Tuple[List[PostNotification], Dict[PostNotification, List[int]]]:
+    attachments = defaultdict(list)
+    original_posts = []
+    for post in posts:
+        original_post = PostNotification(post.post_id, post.channel, post.user_id)
+        has_attachment = post.extra_post_id is not None
+        if not has_attachment or original_post not in attachments:
+            original_posts.append(original_post)
+        if has_attachment:
+            attachments[original_post].append(post.extra_post_id)
+    return original_posts, attachments
+
+
 async def notify(bot):
     clear_cache_dir()
     hard_time_offset = datetime.datetime.now() - hard_time_window
-    posts = PostsStorage.get_notification_posts(hard_time_offset)
-    if len(posts) == 0:
+    posts_with_attachments = PostsStorage.get_notification_posts(hard_time_offset)
+    if len(posts_with_attachments) == 0:
         logging.info("Notification is not needed: no new posts")
         return
+    posts, attachments = filter_original_posts(posts_with_attachments)
     logging.info("Start notification session")
     res = defaultdict(set)
     for post in posts:
         res[post.channel].add(post.post_id)
+        if post in attachments:
+            for post_id in attachments[post]:
+                res[post.channel].add(post_id)
+
     loaded = {}
     for channel, post_ids in res.items():
         try:
@@ -61,10 +81,12 @@ async def notify(bot):
         if user_id in disabled_users:
             continue
         await sleep(notification_single_timeout_s)
-        message = loaded[(post.channel, post.post_id)]
+        posts_group = [post.post_id] + attachments[post]
+        posts_group.sort()
+        messages = [loaded[(post.channel, post_id)] for post_id in posts_group]
         logging.debug(f"Send message to {user_id}: {post.channel} {post.post_id}")
         try:
-            await send_message(bot, user_id, message, file_cache)
+            await send_message(bot, user_id, messages, file_cache)
             sent_posts.append(post)
         except TelegramForbiddenError:
             logging.info(f"User {user_id} blocked the bot. Disable for this notification.")
@@ -82,40 +104,50 @@ def clear_cache_dir():
     shutil.rmtree("bot/downloads", ignore_errors=True)
 
 
-async def send_message(bot, user_id, message, file_cache):
+async def send_message(bot, user_id, messages: List, file_cache):
+    main_message = messages[0]
     try:
-        if message.text is not None:
-            text, entities = create_text(message, message.text)
+        if len(messages) == 1 and main_message.text is not None:
+            text, entities = create_text(main_message, main_message.text)
             await bot.send_message(user_id, text=text, entities=entities,
                                    disable_web_page_preview=True)
             return
-        if message.photo is not None:
-            await resend_file(message.photo.file_id, message, user_id, bot.send_photo, file_cache)
-            return
-        elif message.video is not None and message.video.file_size < 5 * 10 ** 7:
-            def send_video(*args, **kwargs):
-                return bot.send_video(*args, **kwargs, width=message.video.width, height=message.video.height)
+        if main_message.media is not None:
+            text = main_message.caption if main_message.caption is not None else ""
+            if len(text) > MAX_CAPTION_LENGTH:
+                text = text[:MAX_CAPTION_LENGTH] + "..."
+            text, entities = create_text(main_message, text)
+            media_group = MediaGroupBuilder(caption=text, caption_entities=entities)
+            for message in messages:
+                height, width = None, None
+                if message.photo is not None:
+                    file_id = message.photo.file_id
+                elif message.video is not None:
+                    file_id = message.video.file_id
+                    height = message.video.height
+                    width = message.video.width
+                elif message.audio is not None:
+                    file_id = message.audio.file_id
+                elif message.document is not None:
+                    file_id = message.document.file_id
+                else:
+                    logging.warning(f"Unknown file type {message.media}")
+                    continue
 
-            await resend_file(message.video.file_id, message, user_id, send_video, file_cache)
+                if file_id in file_cache:
+                    file = file_cache[file_id]
+                else:
+                    file = await load_file(file_id)
+                    file_cache[file_id] = file
+                media_group.add(type=message.media.value, media=FSInputFile(file), height=height, width=width)
+            await bot.send_media_group(user_id, media=media_group.build())
             return
     except TelegramForbiddenError as e:
         raise e
     except Exception as e:
         logging.exception(e)
+    message = messages[0]
     await bot.send_message(user_id, parse_mode="markdown", text=f"[{message.chat.title}]({message.link})")
-
-
-async def resend_file(file_id: str, message: types.Message, user_id: int, send, file_cache):
-    if file_id in file_cache:
-        file = file_cache[file_id]
-    else:
-        file = await load_file(file_id)
-        file_cache[file_id] = file
-    text = message.caption if message.caption is not None else ""
-    if len(text) > MAX_CAPTION_LENGTH:
-        text = text[:MAX_CAPTION_LENGTH] + "..."
-    text, entities = create_text(message, text)
-    await send(user_id, FSInputFile(file), caption=text, caption_entities=entities)
 
 
 def utf16len(s):

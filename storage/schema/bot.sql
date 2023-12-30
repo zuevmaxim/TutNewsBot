@@ -1,12 +1,12 @@
 BEGIN;
 
-CREATE TABLE Channel
+CREATE TABLE IF NOT EXISTS Channel
 (
     id   SERIAL PRIMARY KEY,
     name VARCHAR NOT NULL UNIQUE
 );
 
-CREATE TABLE Post
+CREATE TABLE IF NOT EXISTS Post
 (
     id         SERIAL PRIMARY KEY,
     post_id    INT                         NOT NULL,
@@ -18,14 +18,23 @@ CREATE TABLE Post
     UNIQUE (post_id, channel_id)
 );
 
-CREATE TABLE BotUser
+CREATE TABLE IF NOT EXISTS Attachment
+(
+    id           SERIAL PRIMARY KEY,
+    post_id      INT                      NOT NULL,
+    main_post_id INT REFERENCES Post (id) NOT NULL,
+
+    UNIQUE (post_id, main_post_id)
+);
+
+CREATE TABLE IF NOT EXISTS BotUser
 (
     id      SERIAL PRIMARY KEY,
     user_id INT     NOT NULL UNIQUE,
     lang    VARCHAR NOT NULL
 );
 
-CREATE TABLE Subscription
+CREATE TABLE IF NOT EXISTS Subscription
 (
     id                SERIAL PRIMARY KEY,
     user_id           INT REFERENCES BotUser (id) NOT NULL,
@@ -36,7 +45,7 @@ CREATE TABLE Subscription
     UNIQUE (user_id, channel_id)
 );
 
-CREATE TABLE Statistics
+CREATE TABLE IF NOT EXISTS Statistics
 (
     id         SERIAL PRIMARY KEY,
     channel_id INT REFERENCES Channel (id) NOT NULL,
