@@ -35,12 +35,16 @@ class GetChatStatus(Enum):
 async def safe_get_channel(channel: str):
     try:
         chat = await app.get_chat(chat_id=f"@{channel}")
-        public_chat = (chat.type == ChatType.CHANNEL or
-                       chat.type == ChatType.GROUP or
-                       chat.type == ChatType.SUPERGROUP) and chat.username is not None
-        if not public_chat or chat.type == ChatType.PRIVATE or chat.type == ChatType.BOT:
-            return GetChatStatus.PRIVATE_CHAT, chat
-        return GetChatStatus.SUCCESS, chat
+        # ChatType.PRIVATE and ChatType.BOT are restricted
+        is_chat_or_channel = chat.type == ChatType.CHANNEL or \
+                             chat.type == ChatType.GROUP or \
+                             chat.type == ChatType.SUPERGROUP
+        if is_chat_or_channel:
+            if chat.username is None:
+                # some channel may have no ID set for samo reason
+                chat.username = channel
+            return GetChatStatus.SUCCESS, chat
+        return GetChatStatus.PRIVATE_CHAT, chat
     except BadRequest as e:
         if e.ID == "USERNAME_INVALID" or e.ID == "USERNAME_NOT_OCCUPIED":
             return GetChatStatus.USER_NOT_EXIST, None
