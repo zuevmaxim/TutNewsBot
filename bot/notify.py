@@ -3,7 +3,7 @@ import logging
 import shutil
 from asyncio import sleep
 from collections import defaultdict
-from typing import List, Tuple, Dict
+from typing import List, Tuple, Dict, Optional
 
 from aiogram.enums import MessageEntityType
 from aiogram.exceptions import TelegramForbiddenError
@@ -147,7 +147,9 @@ async def send_message(bot, user_id, messages: List, file_cache):
     except Exception as e:
         logging.exception(e)
     message = messages[0]
-    await bot.send_message(user_id, parse_mode="markdown", text=f"[{message.chat.title}]({message.link})")
+    reaction = get_first_reaction(message)
+    reaction = f"{reaction} " if reaction else ""
+    await bot.send_message(user_id, parse_mode="markdown", text=f"{reaction}[{message.chat.title}]({message.link})")
 
 
 def utf16len(s):
@@ -170,12 +172,15 @@ def create_text(message: types.Message, text: str):
         if e.offset + e.length > len(text):
             e.length = len(text) - e.offset
 
+    reaction = get_first_reaction(message)
+    reaction = f"{reaction} " if reaction else ""
+
     # add chat name in the beginning
     if message.chat.type == ChatType.CHANNEL:
-        chat_name = f"{message.chat.title}:\n"
+        chat_name = f"{reaction} {message.chat.title}:\n"
     else:
         author = f"{message.from_user.first_name} {message.from_user.last_name}"
-        chat_name = f"{message.chat.title} ({author}):\n"
+        chat_name = f"{reaction} {message.chat.title} ({author}):\n"
 
     text = chat_name + text
     utf_16_chat_name_length = utf16len(chat_name)
@@ -191,6 +196,15 @@ def create_text(message: types.Message, text: str):
                                   length=utf_16_link_length, url=message.link))
     text += link
     return text, entities
+
+
+def get_first_reaction(message) -> Optional[str]:
+    try:
+        if message.reactions is not None and len(message.reactions.reactions) > 0:
+            return message.reactions.reactions[0].emoji
+    except Exception as e:
+        logging.exception(e)
+    return None
 
 
 async def scheduled_notification(bot):
