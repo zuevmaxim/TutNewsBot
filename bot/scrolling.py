@@ -106,7 +106,6 @@ async def collect_chat_history(chat: Chat, channel_id: int, channel_name: str, i
     for (channel_id, media_group), post_ids in media_groups.items():
         main_post_id = min(post_ids)
         post_ids.remove(main_post_id)
-        assert len(post_ids) > 0
         for post_id in post_ids:
             attachments.append(Attachment(channel_id, main_post_id, post_id))
 
