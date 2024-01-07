@@ -11,25 +11,29 @@ import commands.remove
 import commands.start
 from bot.config import *
 from bot.context import Context
+from bot.scrolling_utils import safe_get_channel
 from messages import create_message
 from notify import init_notification
 from scrolling import init_scrolling
-from bot.scrolling_utils import safe_get_channel
 from storage.postgres import db
 
-formatter = logging.Formatter("%(asctime)s [%(levelname)-7.7s]  %(message)s")
-handlers = [
-    logging.FileHandler("bot.log", mode="a"),
-    logging.StreamHandler(),
-]
-logging.getLogger().setLevel(logging.INFO)
-for handler in handlers:
-    handler.setFormatter(formatter)
-    handler.setLevel(logging.INFO)
-    logging.getLogger().addHandler(handler)
 
-storage = MemoryStorage()
-dp = Dispatcher(storage=storage)
+def setup_logging():
+    logging.getLogger().setLevel(logging.INFO)
+    formatter = logging.Formatter("%(asctime)s [%(levelname)-7.7s]  %(message)s")
+
+    file_handler = logging.FileHandler("bot.log", mode="a")
+    file_handler.setFormatter(formatter)
+    file_handler.setLevel(logging.WARNING)
+    logging.getLogger().addHandler(file_handler)
+
+    console_handler = logging.StreamHandler()
+    console_handler.setFormatter(formatter)
+    console_handler.setLevel(logging.INFO)
+    logging.getLogger().addHandler(console_handler)
+
+
+dp = Dispatcher(storage=MemoryStorage())
 
 
 async def init_bot(bot, lang="en"):
@@ -116,6 +120,7 @@ async def main(bot: Bot):
 
 if __name__ == "__main__":
     try:
+        setup_logging()
         context = Context()
         context.stop = False
         context.scrolling_event = asyncio.Event()
