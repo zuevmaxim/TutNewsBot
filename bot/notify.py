@@ -140,8 +140,12 @@ async def send_message(bot, user_id, messages: List, file_cache):
                     file = await load_file(file_id)
                     file_cache[file_id] = file
                 media_group.add(type=message.media.value, media=FSInputFile(file), height=height, width=width)
-            await bot.send_media_group(user_id, media=media_group.build())
-            return
+            media = media_group.build()
+            if len(media) > 0:
+                await bot.send_media_group(user_id, media=media)
+                return
+            else:
+                logging.warning(f"No media found for message {main_message.id} in {main_message.chat.username}")
     except TelegramForbiddenError as e:
         raise e
     except Exception as e:
