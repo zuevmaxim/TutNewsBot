@@ -1,8 +1,8 @@
 #! /bin/bash
 
-if [ -f "env/local.env" ]; then
+if [ -f "env/release.env" ]; then
   set -a
-  source env/local.env
+  source env/release.env
   set +a
 fi
 
