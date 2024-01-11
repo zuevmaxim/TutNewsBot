@@ -7,7 +7,7 @@ if [ -f "env/release.env" ]; then
 fi
 
 if [ -z "$POSTGRES_DB" ] || [ -z "$POSTGRES_USER" ] || [ -z "$POSTGRES_PASSWORD" ] ||
-   [ -z "$POSTGRES_HOST" ] || [ -z "$POSTGRES_PORT" ]; then
+   [ -z "$POSTGRES_PORT" ]; then
   echo "Missing required variables. Please check and re-run the script"
   exit 1
 fi
