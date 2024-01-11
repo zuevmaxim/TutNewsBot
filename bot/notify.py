@@ -68,6 +68,7 @@ async def notify(bot):
     for channel, post_ids in res.items():
         try:
             post_ids = list(post_ids)
+            await sleep(notification_single_timeout_s)
             messages = await get_messages(channel, post_ids)
             for post_id, message in zip(post_ids, messages):
                 loaded[(channel, post_id)] = message
@@ -217,6 +218,7 @@ async def scheduled_notification(bot):
     while True:
         if Context().stop:
             return
+        await sleep(notification_single_timeout_s)
         try:
             await notify(bot)
         except Exception as e:

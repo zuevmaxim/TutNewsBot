@@ -25,7 +25,7 @@ async def safe_get_channel(channel: str):
                              chat.type == ChatType.SUPERGROUP
         if is_chat_or_channel:
             if chat.username is None:
-                # some channel may have no ID set for samo reason
+                # some channel may have no ID set for some reason
                 chat.username = channel
             return GetChatStatus.SUCCESS, chat
         return GetChatStatus.PRIVATE_CHAT, chat

@@ -114,6 +114,7 @@ async def collect_chat_history(chat: Chat, channel_id: int, channel_name: str, i
 
 async def scroll():
     for c in SubscriptionStorage.get_channels():
+        await sleep(scrolling_single_timeout_s)
         try:
             channel_name = c.channel
             status, chat = await safe_get_channel(channel_name)
