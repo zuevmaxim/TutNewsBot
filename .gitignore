@@ -5,3 +5,4 @@
 *.log
 storage/persist
 local_build.sh
+storage/dumps

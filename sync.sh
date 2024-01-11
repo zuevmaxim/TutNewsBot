@@ -21,6 +21,7 @@ rsync -avhP \
   --exclude 'sync_log.sh' \
   --exclude '*.log' \
   --exclude '.git' \
+  --exclude 'storage/dumps' \
   --exclude '.DS_Store' \
   --exclude '*__pycache__/' \
   --exclude '.idea' \
