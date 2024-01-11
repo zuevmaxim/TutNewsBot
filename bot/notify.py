@@ -171,10 +171,11 @@ def create_text(message: types.Message, text: str):
                               language=e.language, custom_emoji_id=str(e.custom_emoji_id)) for e in entities]
 
     # cut entities in case text is cut
-    entities = [e for e in entities if e.offset < len(text)]
+    utf16_text_length = utf16len(text)
+    entities = [e for e in entities if e.offset < utf16_text_length]
     for e in entities:
-        if e.offset + e.length > len(text):
-            e.length = len(text) - e.offset
+        if e.offset + e.length > utf16_text_length:
+            e.length = utf16_text_length - e.offset
 
     reaction = get_first_reaction(message)
     reaction = f"{reaction} " if reaction else ""
