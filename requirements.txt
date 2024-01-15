@@ -1,6 +1,6 @@
 tgcrypto==1.2.5
 aiogram==3.3.0
 Pyrogram==2.0.106
-numpy
+numpy==1.26.3
 psycopg2-binary==2.9.9
 dacite==1.8.1

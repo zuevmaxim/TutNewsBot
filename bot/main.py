@@ -13,7 +13,6 @@ from bot.config import *
 from bot.context import Context
 from bot.scrolling_utils import safe_get_channel
 from messages import create_message
-from notify import init_notification
 from scrolling import init_scrolling
 from storage.postgres import db
 
@@ -121,14 +120,13 @@ async def main(bot: Bot):
 if __name__ == "__main__":
     try:
         setup_logging()
+        bot = Bot(token=bot_token)
         context = Context()
         context.stop = False
         context.scrolling_event = asyncio.Event()
-        context.notification_event = asyncio.Event()
+        context.bot = bot
 
-        bot = Bot(token=bot_token)
         init_scrolling()
-        init_notification(bot)
         loop = asyncio.get_event_loop()
         loop.run_until_complete(main(bot))
     finally:

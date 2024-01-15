@@ -43,7 +43,6 @@ def update_statistics():
 async def scheduled_scrolling():
     async with app:
         await sleep(initial_timeout_s)
-        triggered = False
         while not Context().stop:
             logging.info("Start scrolling session")
             try:
@@ -55,11 +54,10 @@ async def scheduled_scrolling():
             except Exception as e:
                 logging.exception(e)
             logging.info("Complete scrolling session")
+            await trigger_notification()
             if Context().stop:
                 return
-            if triggered:
-                trigger_notification()
-            triggered = await wait_unless_triggered(scrolling_timeout_s, Context().scrolling_event)
+            await wait_unless_triggered(scrolling_timeout_s, Context().scrolling_event)
 
 
 async def collect_chat_history(chat: Chat, channel_id: int, channel_name: str, is_empty: bool):

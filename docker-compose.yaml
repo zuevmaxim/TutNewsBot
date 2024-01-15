@@ -38,7 +38,6 @@ services:
       - API_HASH=${API_HASH}
       - API_ID=${API_ID}
       - SCROLLING_TIMEOUT_MIN=${SCROLLING_TIMEOUT_MIN}
-      - NOTIFICATION_TIMEOUT_MIN=${NOTIFICATION_TIMEOUT_MIN}
       - PYTHONPATH=/app
     working_dir: /app
     command: >

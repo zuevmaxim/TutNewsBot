@@ -1,4 +1,3 @@
-import asyncio
 import logging
 import shutil
 from asyncio import sleep
@@ -15,15 +14,10 @@ from pyrogram.enums import ChatType
 from bot.config import *
 from bot.context import Context
 from bot.scrolling_utils import get_messages, load_file
-from bot.utils import wait_unless_triggered
 from storage.posts_storage import PostsStorage, PostNotification
 from storage.subscriptions_storage import SubscriptionStorage
 
 MAX_CAPTION_LENGTH = 900
-
-
-def trigger_notification():
-    Context().notification_event.set()
 
 
 def update_seen_posts(posts: List[PostNotification]):
@@ -213,21 +207,11 @@ def get_first_reaction(message) -> Optional[str]:
     return None
 
 
-async def scheduled_notification(bot):
-    await sleep(initial_timeout_s)
-    while True:
-        if Context().stop:
-            return
-        await sleep(notification_single_timeout_s)
-        try:
-            await notify(bot)
-        except Exception as e:
-            logging.exception(e)
-        if Context().stop:
-            return
-        await wait_unless_triggered(notification_timeout_s, Context().notification_event)
-
-
-def init_notification(bot):
-    loop = asyncio.get_event_loop()
-    loop.create_task(scheduled_notification(bot))
+async def trigger_notification():
+    if Context().stop:
+        return
+    await sleep(notification_single_timeout_s)
+    try:
+        await notify(Context().bot)
+    except Exception as e:
+        logging.exception(e)
