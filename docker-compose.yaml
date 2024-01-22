@@ -22,7 +22,7 @@ services:
       - ./storage/schema/bot.sql:/docker-entrypoint-initdb.d/create_tables.sql
   bot:
     container_name: tutnews-bot
-    image: python:3.8
+    image: python:3.9
     restart: unless-stopped
     depends_on:
       - db
