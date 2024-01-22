@@ -81,7 +81,7 @@ async def notify(bot):
         messages = [loaded[(post.channel, post_id)] for post_id in posts_group]
         logging.debug(f"Send message to {user_id}: {post.channel} {post.post_id}")
         try:
-            await send_message(bot, user_id, messages, file_cache)
+            await send_message(bot, post.channel, user_id, messages, file_cache)
             sent_posts.append(post)
         except TelegramForbiddenError:
             logging.info(f"User {user_id} blocked the bot. Disable for this notification.")
@@ -99,7 +99,7 @@ def clear_cache_dir():
     shutil.rmtree("bot/downloads", ignore_errors=True)
 
 
-async def send_message(bot, user_id, messages: List, file_cache):
+async def send_message(bot, channel: str, user_id, messages: List, file_cache):
     main_message = messages[0]
     try:
         if len(messages) == 1 and main_message.text is not None:
@@ -148,7 +148,8 @@ async def send_message(bot, user_id, messages: List, file_cache):
     message = messages[0]
     reaction = get_first_reaction(message)
     reaction = f"{reaction} " if reaction else ""
-    await bot.send_message(user_id, parse_mode="markdown", text=f"{reaction}[{message.chat.title}]({message.link})")
+    title = message.chat.title if message.chat is not None else channel
+    await bot.send_message(user_id, parse_mode="markdown", text=f"{reaction}[{title}]({message.link})")
 
 
 def utf16len(s):
