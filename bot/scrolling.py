@@ -23,6 +23,7 @@ def trigger_scrolling():
 
 
 def update_statistics():
+    PostsStorage.delete_old_posts(datetime.datetime.now() - news_drop_time)
     posts = PostsStorage.get_posts()
     reactions = defaultdict(list)
     comments = defaultdict(list)
@@ -37,7 +38,6 @@ def update_statistics():
         for i, p in enumerate(INTERESTING_PERCENTILES):
             values.append(Statistic(channel, p, cp[i], rp[i]))
     StatisticStorage.update(values)
-    PostsStorage.delete_old_posts(datetime.datetime.now() - news_drop_time)
 
 
 async def scheduled_scrolling():
