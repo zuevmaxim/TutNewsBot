@@ -103,15 +103,15 @@ async def send_message(bot, channel: str, user_id, messages: List, file_cache):
     main_message = messages[0]
     try:
         if len(messages) == 1 and main_message.text is not None:
-            text, entities = create_text(main_message, main_message.text)
+            text, entities = create_text(main_message, main_message.text, main_message.entities)
             await bot.send_message(user_id, text=text, entities=entities,
                                    disable_web_page_preview=True)
             return
         if main_message.media is not None:
             text = main_message.caption if main_message.caption is not None else ""
-            if len(text) > MAX_CAPTION_LENGTH:
+            if utf16len(text) > MAX_CAPTION_LENGTH:
                 text = text[:MAX_CAPTION_LENGTH] + "..."
-            text, entities = create_text(main_message, text)
+            text, entities = create_text(main_message, text, main_message.caption_entities)
             media_group = MediaGroupBuilder(caption=text, caption_entities=entities)
             for message in messages:
                 height, width = None, None
@@ -159,8 +159,8 @@ def utf16len(s):
     return len(s.encode('utf-16')) // 2 - 1
 
 
-def create_text(message: types.Message, text: str):
-    entities = message.entities if message.entities is not None else []
+def create_text(message: types.Message, text: str, entities: list):
+    entities = [] if entities is None else entities
 
     # repack entities from pyrogram to aiogram
     entities = [MessageEntity(type=e.type.name.lower(), offset=e.offset, length=e.length, url=e.url, user=e.user,
