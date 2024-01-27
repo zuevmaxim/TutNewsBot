@@ -25,6 +25,7 @@ class Post:
     post_id: int
     comments: int
     reactions: int
+    forwards: int
     timestamp: datetime
 
     @staticmethod
@@ -44,6 +45,7 @@ class PostStatistics:
     channel_id: int
     comments: int
     reactions: int
+    forwards: int
 
     @staticmethod
     def parse_json(json_data: dict):
@@ -65,28 +67,30 @@ class PostsStorage:
             "WHERE Post.post_id > Subscription.last_seen_post_id "
             "AND Post.timestamp >= %s "
             "AND (Post.comments > Statistics.comments "
-            "OR Post.reactions > Statistics.reactions) "
+            "OR Post.reactions > Statistics.reactions "
+            "OR (Post.reactions = 0 AND Post.comments = 0 AND Post.forwards > Statistics.forwards) )"
             "ORDER BY Post.timestamp",
             [hard_time_offset])
         return list(map(PostNotification.parse_json, cursor))
 
     @staticmethod
     def get_posts() -> List[PostStatistics]:
-        cursor = db.execute("SELECT Post.channel_id, Post.comments, Post.reactions FROM Post")
+        cursor = db.execute("SELECT Post.channel_id, Post.comments, Post.reactions, Post.forwards FROM Post")
         return list(map(PostStatistics.parse_json, cursor))
 
     @staticmethod
     def add_posts(posts: List[Post]):
         if len(posts) == 0:
             return
-        str_args = ", ".join(["(%s, %s, %s, %s, %s)"] * len(posts))
+        str_args = ", ".join(["(%s, %s, %s, %s, %s, %s)"] * len(posts))
         args = []
         for post in posts:
-            args += [post.post_id, post.channel_id, post.timestamp, post.comments, post.reactions]
-        db.execute("INSERT INTO Post(post_id, channel_id, timestamp, comments, reactions) "
+            args += [post.post_id, post.channel_id, post.timestamp, post.comments, post.reactions, post.forwards]
+        db.execute("INSERT INTO Post(post_id, channel_id, timestamp, comments, reactions, forwards) "
                    "VALUES {} ON CONFLICT (post_id, channel_id) DO UPDATE SET "
                    "comments = excluded.comments, "
                    "reactions = excluded.reactions, "
+                   "forwards = excluded.forwards, "
                    "timestamp = excluded.timestamp".format(str_args), args)
 
     @staticmethod

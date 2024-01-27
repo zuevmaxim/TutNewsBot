@@ -12,6 +12,7 @@ class Statistic:
     percentile: int
     comments: int
     reactions: int
+    forwards: int
 
     @staticmethod
     def parse_json(json_data: dict):
@@ -23,12 +24,13 @@ class StatisticStorage:
     def update(values: List[Statistic]):
         if len(values) == 0:
             return
-        str_args = ", ".join(["(%s, %s, %s, %s)"] * len(values))
+        str_args = ", ".join(["(%s, %s, %s, %s, %s)"] * len(values))
         args = []
         for s in values:
-            args += [s.channel, s.percentile, s.comments, s.reactions]
-        db.execute("INSERT INTO Statistics (channel_id, percentile, comments, reactions) "
+            args += [s.channel, s.percentile, s.comments, s.reactions, s.forwards]
+        db.execute("INSERT INTO Statistics (channel_id, percentile, comments, reactions, forwards) "
                    "VALUES {} "
                    "ON CONFLICT (channel_id, percentile) DO UPDATE SET "
                    "comments = excluded.comments, "
-                   "reactions = excluded.reactions".format(str_args), args)
+                   "reactions = excluded.reactions, "
+                   "forwards = excluded.forwards ".format(str_args), args)

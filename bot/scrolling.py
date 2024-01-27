@@ -27,16 +27,19 @@ def update_statistics():
     posts = PostsStorage.get_posts()
     reactions = defaultdict(list)
     comments = defaultdict(list)
+    forwards = defaultdict(list)
     for post in posts:
-        channel, comment, reaction = post.channel_id, post.comments, post.reactions
+        channel, comment, reaction, forward = post.channel_id, post.comments, post.reactions, post.forwards
         reactions[channel].append(reaction)
         comments[channel].append(comment)
+        forwards[channel].append(forward)
     values = []
     for channel in reactions.keys():
         rp = np.percentile(reactions[channel], INTERESTING_PERCENTILES)
         cp = np.percentile(comments[channel], INTERESTING_PERCENTILES)
+        fp = np.percentile(forwards[channel], INTERESTING_PERCENTILES)
         for i, p in enumerate(INTERESTING_PERCENTILES):
-            values.append(Statistic(channel, p, cp[i], rp[i]))
+            values.append(Statistic(channel, p, cp[i], rp[i], fp[i]))
     StatisticStorage.update(values)
 
 
@@ -81,6 +84,7 @@ async def collect_chat_history(chat: Chat, channel_id: int, channel_name: str, i
             break
         if message.media_group_id is not None:
             media_groups[(channel_id, message.media_group_id)].append(post_id)
+        forwards = message.forwards
         reactions = 0
         if message.reactions is not None:
             reactions = sum([reaction.count for reaction in message.reactions.reactions])
@@ -97,7 +101,7 @@ async def collect_chat_history(chat: Chat, channel_id: int, channel_name: str, i
                     pass
                 else:
                     logging.warning(f"Failed to update comments in {message.link} {e.MESSAGE}")
-        posts.append(Post(channel_id, post_id, comments, reactions, timestamp))
+        posts.append(Post(channel_id, post_id, comments, reactions, forwards, timestamp))
         await sleep(scrolling_single_timeout_s)
 
     attachments = []

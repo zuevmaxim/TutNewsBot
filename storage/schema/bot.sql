@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS Post
     timestamp  TIMESTAMPTZ                 NOT NULL,
     comments   INT                         NOT NULL DEFAULT 0 CHECK (comments >= 0),
     reactions  INT                         NOT NULL DEFAULT 0 CHECK (reactions >= 0),
+    forwards   INT                         NOT NULL DEFAULT 0 CHECK (forwards >= 0),
 
     UNIQUE (post_id, channel_id)
 );
@@ -52,6 +53,7 @@ CREATE TABLE IF NOT EXISTS Statistics
     percentile INT                         NOT NULL CHECK (0 <= percentile AND percentile <= 100),
     comments   INT                         NOT NULL DEFAULT 0 CHECK (comments >= 0),
     reactions  INT                         NOT NULL DEFAULT 0 CHECK (reactions >= 0),
+    forwards   INT                         NOT NULL DEFAULT 0 CHECK (forwards >= 0),
 
     UNIQUE (channel_id, percentile)
 );
