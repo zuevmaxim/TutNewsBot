@@ -52,7 +52,8 @@ async def handle_subscription_name(message: types.Message, safe_get_channel, sta
     if state is not None:
         # delete to remove keyboard
         data = await state.get_data()
-        await data["my_message"].delete()
+        if "my_message" in data:
+            await data["my_message"].delete()
         await state.clear()
     subscription = SubscriptionStorage.get_subscription(str(message.from_user.id), channel)
     if subscription is not None:
