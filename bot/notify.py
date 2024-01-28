@@ -103,7 +103,7 @@ async def send_message(bot, channel: str, user_id, messages: List, file_cache):
     main_message = messages[0]
     try:
         if len(messages) == 1 and main_message.text is not None:
-            text, entities = create_text(main_message, main_message.text, main_message.entities)
+            text, entities = create_text(channel, main_message, main_message.text, main_message.entities)
             await bot.send_message(user_id, text=text, entities=entities,
                                    disable_web_page_preview=True)
             return
@@ -111,7 +111,7 @@ async def send_message(bot, channel: str, user_id, messages: List, file_cache):
             text = main_message.caption if main_message.caption is not None else ""
             if utf16len(text) > MAX_CAPTION_LENGTH:
                 text = text[:MAX_CAPTION_LENGTH] + "..."
-            text, entities = create_text(main_message, text, main_message.caption_entities)
+            text, entities = create_text(channel, main_message, text, main_message.caption_entities)
             media_group = MediaGroupBuilder(caption=text, caption_entities=entities)
             for message in messages:
                 height, width = None, None
@@ -159,7 +159,7 @@ def utf16len(s):
     return len(s.encode('utf-16')) // 2 - 1
 
 
-def create_text(message: types.Message, text: str, entities: list):
+def create_text(channel: str, message: types.Message, text: str, entities: list):
     entities = [] if entities is None else entities
 
     # repack entities from pyrogram to aiogram
@@ -190,7 +190,7 @@ def create_text(message: types.Message, text: str, entities: list):
     entities = [MessageEntity(type=MessageEntityType.BOLD, offset=0, length=utf_16_chat_name_length)] + entities
 
     # add link in the end
-    link = f"\n{message.chat.username}"
+    link = f"\n{channel}"
     utf16_text_length = utf16len(text)
     utf_16_link_length = utf16len(link)
     entities.append(MessageEntity(type=MessageEntityType.TEXT_LINK, offset=utf16_text_length,
