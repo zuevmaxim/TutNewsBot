@@ -108,10 +108,11 @@ async def send_message(bot, channel: str, user_id, messages: List, file_cache):
                                    disable_web_page_preview=True)
             return
         if main_message.media is not None:
-            text = next((message.caption for message in messages if message.caption is not None), "")
+            message_with_text = next((message for message in messages if message.caption is not None), main_message)
+            text = message_with_text.caption if message_with_text.caption is not None else ""
             if utf16len(text) > MAX_CAPTION_LENGTH:
                 text = text[:MAX_CAPTION_LENGTH] + "..."
-            text, entities = create_text(channel, main_message, text, main_message.caption_entities)
+            text, entities = create_text(channel, main_message, text, message_with_text.caption_entities)
             media_group = MediaGroupBuilder(caption=text, caption_entities=entities)
             for message in messages:
                 height, width = None, None
