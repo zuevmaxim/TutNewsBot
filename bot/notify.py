@@ -108,7 +108,7 @@ async def send_message(bot, channel: str, user_id, messages: List, file_cache):
                                    disable_web_page_preview=True)
             return
         if main_message.media is not None:
-            text = main_message.caption if main_message.caption is not None else ""
+            text = next((message.caption for message in messages if message.caption is not None), "")
             if utf16len(text) > MAX_CAPTION_LENGTH:
                 text = text[:MAX_CAPTION_LENGTH] + "..."
             text, entities = create_text(channel, main_message, text, main_message.caption_entities)
