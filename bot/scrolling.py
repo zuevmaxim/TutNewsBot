@@ -84,7 +84,7 @@ async def collect_chat_history(chat: Chat, channel_id: int, channel_name: str, i
             break
         if message.media_group_id is not None:
             media_groups[(channel_id, message.media_group_id)].append(post_id)
-        forwards = message.forwards
+        forwards = message.forwards if message.forwards is not None else 0
         reactions = 0
         if message.reactions is not None:
             reactions = sum([reaction.count for reaction in message.reactions.reactions])
