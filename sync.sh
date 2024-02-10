@@ -9,6 +9,14 @@ if [ -z "$KEY_PATH" ] || [ -z "$TARGET_USER" ] || [ -z "$TARGET_HOST" ] || [ -z 
   exit 1
 fi
 
+# Check for uncommitted changes
+if [ -n "$(git status --porcelain)" ]; then
+  echo "Current status of the repository is going to be released."
+  echo "However, there are uncommitted changes."
+  echo "Please review and commit all changes before running this script."
+  exit 1
+fi
+
 rsync -avhP \
   -e "ssh -i $KEY_PATH" \
   --exclude '*.session*' \
