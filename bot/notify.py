@@ -35,7 +35,7 @@ def filter_original_posts(posts: List[PostNotification]) -> \
     for post in posts:
         original_post = PostNotification(post.post_id, post.channel, post.user_id)
         has_attachment = post.extra_post_id is not None
-        if not has_attachment or original_post not in attachments:
+        if original_post not in original_posts:
             original_posts.append(original_post)
         if has_attachment:
             attachments[original_post].append(post.extra_post_id)
