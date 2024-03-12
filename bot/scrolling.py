@@ -5,7 +5,7 @@ from collections import defaultdict
 
 import numpy as np
 from pyrogram.enums import ChatType
-from pyrogram.errors import BadRequest
+from pyrogram.errors import BadRequest, RpcCallFail
 from pyrogram.types import Chat
 
 from bot.config import *
@@ -131,6 +131,9 @@ async def scroll():
             PostsStorage.add_posts(posts)
             PostsStorage.add_attachments(attachments)
             logging.debug(f"Scrolled {len(posts)} posts in {channel_name}")
+        except RpcCallFail as e:
+            await sleep(internal_error_timeout_s)
+            logging.warning(f"Suspend scrolling due to {e.MESSAGE}")
         except Exception as e:
             logging.exception(e)
 

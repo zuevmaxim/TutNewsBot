@@ -17,6 +17,7 @@ initial_timeout_s = 5
 scrolling_timeout_s = int(get_env_or("SCROLLING_TIMEOUT_MIN", 10)) * MINUTE
 scrolling_single_timeout_s = 0.5
 notification_single_timeout_s = 0.5
+internal_error_timeout_s = 10
 
 hard_time_window = datetime.timedelta(days=1)
 soft_time_window = datetime.timedelta(hours=6)

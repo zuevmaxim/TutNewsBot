@@ -114,6 +114,7 @@ async def send_message(bot, channel: str, user_id, messages: List, file_cache):
                 text = text[:MAX_CAPTION_LENGTH] + "..."
             text, entities = create_text(channel, main_message, text, message_with_text.caption_entities)
             media_group = MediaGroupBuilder(caption=text, caption_entities=entities)
+            all_skipped = True
             for message in messages:
                 height, width = None, None
                 if message.photo is not None:
@@ -130,6 +131,7 @@ async def send_message(bot, channel: str, user_id, messages: List, file_cache):
                     logging.warning(f"Unknown file type {message.media}")
                     continue
 
+                all_skipped = False
                 if file_id in file_cache:
                     file = file_cache[file_id]
                 else:
@@ -140,7 +142,7 @@ async def send_message(bot, channel: str, user_id, messages: List, file_cache):
             if len(media) > 0:
                 await bot.send_media_group(user_id, media=media)
                 return
-            else:
+            elif not all_skipped:
                 logging.warning(f"No media found for message {main_message.id} in {main_message.chat.username}")
     except TelegramForbiddenError as e:
         raise e
