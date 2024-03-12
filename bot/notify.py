@@ -5,7 +5,7 @@ from collections import defaultdict
 from typing import List, Tuple, Dict, Optional
 
 from aiogram.enums import MessageEntityType
-from aiogram.exceptions import TelegramForbiddenError
+from aiogram.exceptions import TelegramForbiddenError, TelegramBadRequest
 from aiogram.types import MessageEntity, FSInputFile
 from aiogram.utils.media_group import MediaGroupBuilder
 from pyrogram import types
@@ -146,6 +146,11 @@ async def send_message(bot, channel: str, user_id, messages: List, file_cache):
                 logging.warning(f"No media found for message {main_message.id} in {main_message.chat.username}")
     except TelegramForbiddenError as e:
         raise e
+    except TelegramBadRequest as e:
+        if "with the error message \"USER_IS_BLOCKED\"" in e.message:
+            raise TelegramForbiddenError(e.method, e.message)
+        else:
+            logging.warning(e)
     except Exception as e:
         logging.exception(e)
     message = messages[0]
