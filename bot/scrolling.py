@@ -108,9 +108,13 @@ async def collect_chat_history(chat: Chat, channel_id: int, channel_name: str, i
     for (channel_id, media_group), post_ids in media_groups.items():
         main_post_id = min(post_ids)
         post_ids.remove(main_post_id)
+
+        # do not consider post with attachment as a target
+        for post in posts:
+            if post.post_id in post_ids:
+                posts.remove(post)
+
         for post_id in post_ids:
-            # do not consider post with attachment as a target
-            posts.remove(next(post for post in posts if post.post_id == post_id))
             attachments.append(Attachment(channel_id, main_post_id, post_id))
 
     return posts, attachments
