@@ -105,17 +105,17 @@ async def collect_chat_history(chat: Chat, channel_id: int, channel_name: str, i
         await sleep(scrolling_single_timeout_s)
 
     attachments = []
+    attachment_posts = set()
     for (channel_id, media_group), post_ids in media_groups.items():
         main_post_id = min(post_ids)
         post_ids.remove(main_post_id)
-
-        # do not consider post with attachment as a target
-        for post in posts:
-            if post.post_id in post_ids:
-                posts.remove(post)
+        attachment_posts.update(post_ids)
 
         for post_id in post_ids:
             attachments.append(Attachment(channel_id, main_post_id, post_id))
+
+    # do not consider post with attachment as a target
+    posts = [post for post in posts if post.post_id not in attachment_posts]
 
     return posts, attachments
 
