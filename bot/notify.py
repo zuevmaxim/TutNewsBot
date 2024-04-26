@@ -157,7 +157,8 @@ async def send_message(bot, channel: str, user_id, messages: List, file_cache):
     reaction = get_first_reaction(message)
     reaction = f"{reaction} " if reaction else ""
     title = message.chat.title if message.chat is not None else channel
-    await bot.send_message(user_id, parse_mode="markdown", text=f"{reaction}[{title}]({message.link})")
+    link = message.link if message.chat is not None else f"https://t.me/{channel}/{message.id}"
+    await bot.send_message(user_id, parse_mode="markdown", text=f"{reaction}[{title}]({link})")
 
 
 def utf16len(s):
