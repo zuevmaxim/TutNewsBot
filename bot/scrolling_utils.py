@@ -29,6 +29,9 @@ async def safe_get_channel(channel: str):
                 chat.username = channel
             return GetChatStatus.SUCCESS, chat
         return GetChatStatus.PRIVATE_CHAT, chat
+    except KeyError as e:
+        if str(e).startswith("Username not found:"):
+            return GetChatStatus.USER_NOT_EXIST, None
     except BadRequest as e:
         if e.ID == "USERNAME_INVALID" or e.ID == "USERNAME_NOT_OCCUPIED":
             return GetChatStatus.USER_NOT_EXIST, None
