@@ -1,5 +1,6 @@
 tgcrypto==1.2.5
-aiogram==3.3.0
+aiogram==3.6.0
+aiohttp==3.9.5
 Pyrogram==2.0.106
 numpy==1.26.3
 psycopg2-binary==2.9.9
