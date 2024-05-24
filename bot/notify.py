@@ -42,6 +42,27 @@ def filter_original_posts(posts: List[PostNotification]) -> \
     return original_posts, attachments
 
 
+async def await_connection(bot, retries=20):
+    for i in range(retries):
+        await sleep(i + 1)
+        try:
+            await bot.get_me()
+            return
+        except ConnectionResetError:
+            pass
+
+
+async def run_with_retry(bot, action, retries=3):
+    for i in range(retries):
+        try:
+            await action()
+            return True, None
+        except ConnectionResetError as e:
+            if i + 1 == retries:
+                return False, e
+            await await_connection(bot)
+
+
 async def notify(bot):
     clear_cache_dir()
     hard_time_offset = datetime.datetime.now() - hard_time_window
@@ -71,6 +92,7 @@ async def notify(bot):
     sent_posts = []
     file_cache = {}
     disabled_users = set()
+    network_error_logged = False
     for post in posts:
         user_id = post.user_id
         if user_id in disabled_users:
@@ -81,8 +103,17 @@ async def notify(bot):
         messages = [loaded[(post.channel, post_id)] for post_id in posts_group]
         logging.debug(f"Send message to {user_id}: {post.channel} {post.post_id}")
         try:
-            await send_message(bot, post.channel, user_id, messages, file_cache)
-            sent_posts.append(post)
+            async def do_send():
+                await send_message(bot, post.channel, user_id, messages, file_cache)
+                sent_posts.append(post)
+
+            success, e = await run_with_retry(bot, do_send)
+            if not success:
+                if not network_error_logged:
+                    network_error_logged = True
+                    logging.exception(e)
+                logging.error(f"Failed to send message to {user_id}: {post.channel} {post.post_id} "
+                              f"due to connection reset")
         except TelegramForbiddenError:
             logging.info(f"User {user_id} blocked the bot. Disable for this notification.")
             disabled_users.add(user_id)
