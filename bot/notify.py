@@ -1,3 +1,4 @@
+import asyncio.exceptions
 import logging
 import shutil
 from asyncio import sleep
@@ -182,6 +183,8 @@ async def send_message(bot, channel: str, user_id, messages: List, file_cache):
             raise TelegramForbiddenError(e.method, e.message)
         else:
             logging.warning(e)
+    except ConnectionResetError | asyncio.exceptions.CancelledError as e:
+        raise e
     except Exception as e:
         logging.exception(e)
     message = messages[0]
