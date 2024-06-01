@@ -14,7 +14,7 @@ def get_env_or(key, default_value):
 
 MINUTE = 60
 initial_timeout_s = 5
-scrolling_timeout_s = int(get_env_or("SCROLLING_TIMEOUT_MIN", 10)) * MINUTE
+scrolling_timeout_s = int(get_env_or("SCROLLING_TIMEOUT_MIN", 11)) * MINUTE
 scrolling_single_timeout_s = 0.5
 notification_single_timeout_s = 1
 internal_error_timeout_s = 10
