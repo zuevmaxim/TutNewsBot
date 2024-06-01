@@ -48,20 +48,25 @@ async def await_connection(bot, retries=20):
         await sleep(i + 1)
         try:
             await bot.get_me()
-            return
+            return True
         except ConnectionResetError:
             pass
+    logging.warning("All retries failed: await_connection")
+    return False
 
 
 async def run_with_retry(bot, action, retries=3):
+    success = False
     for i in range(retries):
         try:
             await action()
             return True, None
         except ConnectionResetError as e:
+            if success:
+                logging.warning(f"Previous {i - 1} 'await_connection' was successful, but current retry {i} failed")
             if i + 1 == retries:
                 return False, e
-            await await_connection(bot)
+            success = await await_connection(bot)
 
 
 async def notify(bot):
@@ -112,9 +117,9 @@ async def notify(bot):
             if not success:
                 if not network_error_logged:
                     network_error_logged = True
-                    logging.exception(e)
+                    logging.exception(e, exc_info=True)
                 logging.error(f"Failed to send message to {user_id}: {post.channel} {post.post_id} "
-                              f"due to connection reset")
+                              f"due to connection reset", exc_info=False)
         except TelegramForbiddenError:
             logging.info(f"User {user_id} blocked the bot. Disable for this notification.")
             disabled_users.add(user_id)
