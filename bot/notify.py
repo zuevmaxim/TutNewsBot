@@ -6,7 +6,7 @@ from collections import defaultdict
 from typing import List, Tuple, Dict, Optional
 
 from aiogram.enums import MessageEntityType
-from aiogram.exceptions import TelegramForbiddenError, TelegramBadRequest
+from aiogram.exceptions import TelegramForbiddenError, TelegramBadRequest, TelegramEntityTooLarge
 from aiogram.types import MessageEntity, FSInputFile
 from aiogram.utils.media_group import MediaGroupBuilder
 from pyrogram import types
@@ -60,6 +60,8 @@ async def run_with_retry(bot, action, retries=3):
     for i in range(retries):
         try:
             await action()
+            if i > 0:
+                logging.warning(f"Successful retry! {i}")
             return True, None
         except ConnectionResetError as e:
             if success:
@@ -117,7 +119,7 @@ async def notify(bot):
             if not success:
                 if not network_error_logged:
                     network_error_logged = True
-                    logging.exception(e, exc_info=True)
+                    logging.exception(e, exc_info=False)
                 logging.error(f"Failed to send message to {user_id}: {post.channel} {post.post_id} "
                               f"due to connection reset", exc_info=False)
         except TelegramForbiddenError:
@@ -192,6 +194,8 @@ async def send_message(bot, channel: str, user_id, messages: List, file_cache):
         raise e
     except asyncio.exceptions.CancelledError as e:
         raise e
+    except TelegramEntityTooLarge:
+        logging.warning("Cannot send media, as it is too large, resend as a link")
     except Exception as e:
         logging.exception(e)
     message = messages[0]
