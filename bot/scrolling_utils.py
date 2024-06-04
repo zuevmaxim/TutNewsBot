@@ -1,3 +1,4 @@
+import logging
 from enum import Enum
 from typing import List
 
@@ -43,4 +44,8 @@ async def get_messages(channel: str, post_ids: List[int]) -> List[types.Message]
 
 
 async def load_file(file_id: str) -> str:
-    return await app.download_media(file_id)
+    try:
+        return await app.download_media(file_id)
+    except Exception as e:
+        logging.warning("Error while file loading", e)
+        raise e

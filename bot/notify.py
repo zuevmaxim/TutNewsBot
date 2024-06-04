@@ -123,14 +123,19 @@ def clear_cache_dir():
     shutil.rmtree("bot/downloads", ignore_errors=True)
 
 
-async def send_message(bot, channel: str, user_id, messages: List, file_cache):
+def is_valid_file_size(file_size: int, max_size_mb: int):
+    max_size = max_size_mb * (2 ** 20)
+    return file_size < max_size
+
+
+async def send_original_message(bot, channel: str, user_id, messages: List, file_cache):
     main_message = messages[0]
     try:
         if len(messages) == 1 and main_message.text is not None:
             text, entities = create_text(channel, main_message, main_message.text, main_message.entities)
             await bot.send_message(user_id, text=text, entities=entities,
                                    disable_web_page_preview=True)
-            return
+            return True
         if main_message.media is not None:
             message_with_text = next((message for message in messages if message.caption is not None), main_message)
             text = message_with_text.caption if message_with_text.caption is not None else ""
@@ -140,20 +145,29 @@ async def send_message(bot, channel: str, user_id, messages: List, file_cache):
             media_group = MediaGroupBuilder(caption=text, caption_entities=entities)
             all_skipped = True
             for message in messages:
-                height, width = None, None
+                height, width, file_size = None, None, None
                 if message.photo is not None:
                     file_id = message.photo.file_id
+                    if not is_valid_file_size(message.photo.file_size, 10):
+                        logging.warning(f"Cannot resend a photo, as it is too large {message.photo.file_size}")
+                        return False
                 elif message.video is not None:
                     file_id = message.video.file_id
+                    file_size = message.video.file_size
                     height = message.video.height
                     width = message.video.width
                 elif message.audio is not None:
                     file_id = message.audio.file_id
+                    file_size = message.audio.file_size
                 elif message.document is not None:
                     file_id = message.document.file_id
+                    file_size = message.document.file_size
                 else:
                     logging.warning(f"Unknown file type {message.media}")
                     continue
+                if file_size is not None and not is_valid_file_size(file_size, 50):
+                    logging.warning(f"Cannot resend a file, as it is too large {file_size}")
+                    return False
 
                 all_skipped = False
                 if file_id in file_cache:
@@ -165,7 +179,7 @@ async def send_message(bot, channel: str, user_id, messages: List, file_cache):
             media = media_group.build()
             if len(media) > 0:
                 await bot.send_media_group(user_id, media=media)
-                return
+                return True
             elif not all_skipped:
                 logging.warning(f"No media found for message {main_message.id} in {main_message.chat.username}")
     except TelegramForbiddenError as e:
@@ -183,6 +197,12 @@ async def send_message(bot, channel: str, user_id, messages: List, file_cache):
         logging.warning("Cannot send media, as it is too large, resend as a link")
     except Exception as e:
         logging.exception(e)
+    return False
+
+
+async def send_message(bot, channel: str, user_id, messages: List, file_cache):
+    if await send_original_message(bot, channel, user_id, messages, file_cache):
+        return
     message = messages[0]
     reaction = get_first_reaction(message)
     reaction = f"{reaction} " if reaction else ""
