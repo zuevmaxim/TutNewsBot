@@ -43,20 +43,7 @@ def filter_original_posts(posts: List[PostNotification]) -> \
     return original_posts, attachments
 
 
-async def await_connection(bot, retries=20):
-    for i in range(retries):
-        await sleep(i + 1)
-        try:
-            await bot.get_me()
-            return True
-        except ConnectionResetError:
-            pass
-    logging.warning("All retries failed: await_connection")
-    return False
-
-
-async def run_with_retry(bot, action, retries=3):
-    success = False
+async def run_with_retry(action, retries=5):
     for i in range(retries):
         try:
             await action()
@@ -64,11 +51,9 @@ async def run_with_retry(bot, action, retries=3):
                 logging.warning(f"Successful retry! {i}")
             return True, None
         except ConnectionResetError as e:
-            if success:
-                logging.warning(f"Previous {i - 1} 'await_connection' was successful, but current retry {i} failed")
             if i + 1 == retries:
                 return False, e
-            success = await await_connection(bot)
+            await sleep(i + 1)
 
 
 async def notify(bot):
@@ -115,7 +100,7 @@ async def notify(bot):
                 await send_message(bot, post.channel, user_id, messages, file_cache)
                 sent_posts.append(post)
 
-            success, e = await run_with_retry(bot, do_send)
+            success, e = await run_with_retry(do_send)
             if not success:
                 if not network_error_logged:
                     network_error_logged = True
