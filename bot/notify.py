@@ -102,11 +102,22 @@ async def notify(bot):
 
             success, e = await run_with_retry(do_send)
             if not success:
-                if not network_error_logged:
-                    network_error_logged = True
-                    logging.exception(e, exc_info=False)
-                logging.error(f"Failed to send message to {user_id}: {post.channel} {post.post_id} "
-                              f"due to connection reset", exc_info=False)
+                try:
+                    await send_message_as_link(bot, post.channel, user_id, messages)
+                    sent_posts.append(post)
+                    success = True
+                    logging.warning(f"Resend message as link to {user_id}: {post.channel} {post.post_id} "
+                                    f"due to connection reset")
+                except TelegramForbiddenError as e:
+                    raise e
+                except Exception as e:
+                    logging.error("Failed to resend as link", e)
+                if not success:
+                    if not network_error_logged:
+                        network_error_logged = True
+                        logging.exception(e, exc_info=False)
+                    logging.error(f"Failed to send message to {user_id}: {post.channel} {post.post_id} "
+                                  f"due to connection reset", exc_info=False)
         except TelegramForbiddenError:
             logging.info(f"User {user_id} blocked the bot. Disable for this notification.")
             disabled_users.add(user_id)
@@ -200,15 +211,19 @@ async def send_original_message(bot, channel: str, user_id, messages: List, file
     return False
 
 
-async def send_message(bot, channel: str, user_id, messages: List, file_cache):
-    if await send_original_message(bot, channel, user_id, messages, file_cache):
-        return
+async def send_message_as_link(bot, channel, user_id, messages):
     message = messages[0]
     reaction = get_first_reaction(message)
     reaction = f"{reaction} " if reaction else ""
     title = message.chat.title if message.chat is not None else channel
     link = message.link if message.chat is not None else f"https://t.me/{channel}/{message.id}"
     await bot.send_message(user_id, parse_mode="markdown", text=f"{reaction}[{title}]({link})")
+
+
+async def send_message(bot, channel: str, user_id, messages: List, file_cache):
+    if await send_original_message(bot, channel, user_id, messages, file_cache):
+        return
+    await send_message_as_link(bot, channel, user_id, messages)
 
 
 def utf16len(s):
