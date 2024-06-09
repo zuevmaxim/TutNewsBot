@@ -124,8 +124,6 @@ async def notify(bot):
         except Exception as e:
             logging.exception(e)
     update_seen_posts(sent_posts)
-    for file in file_cache.values():
-        os.remove(file)
     clear_cache_dir()
     logging.info("Complete notification session")
 
@@ -185,6 +183,9 @@ async def send_original_message(bot, channel: str, user_id, messages: List, file
                     file = file_cache[file_id]
                 else:
                     file = await load_file(file_id)
+                    if file is None:
+                        logging.warning(f"Loaded file {file_id} is None, resend as link")
+                        return False
                     file_cache[file_id] = file
                 media_group.add(type=message.media.value, media=FSInputFile(file), height=height, width=width)
             media = media_group.build()
