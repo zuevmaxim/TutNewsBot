@@ -4,7 +4,7 @@ from typing import List
 
 from pyrogram import Client, types
 from pyrogram.enums import ChatType
-from pyrogram.errors import BadRequest
+from pyrogram.errors import BadRequest, ChannelPrivate
 
 from bot.config import api_id, api_hash
 
@@ -33,10 +33,13 @@ async def safe_get_channel(channel: str):
     except KeyError as e:
         if str(e).startswith("Username not found:"):
             return GetChatStatus.USER_NOT_EXIST, None
+        raise e
     except BadRequest as e:
         if e.ID == "USERNAME_INVALID" or e.ID == "USERNAME_NOT_OCCUPIED":
             return GetChatStatus.USER_NOT_EXIST, None
         raise e
+    except ChannelPrivate:
+        return GetChatStatus.PRIVATE_CHAT, None
 
 
 async def get_messages(channel: str, post_ids: List[int]) -> List[types.Message]:
