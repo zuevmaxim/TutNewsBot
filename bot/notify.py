@@ -12,6 +12,7 @@ from aiogram.utils.media_group import MediaGroupBuilder
 from pyrogram import types
 from pyrogram.enums import ChatType
 
+from ai.ai import should_skip_text
 from bot.config import *
 from bot.context import Context
 from bot.scrolling_utils import get_messages, load_file
@@ -56,6 +57,13 @@ async def run_with_retry(action, retries=5):
             await sleep(i + 1)
 
 
+def should_skip_message(message: types.Message):
+    text = message.text
+    if text is None or len(text.strip()) == 0:
+        return False
+    return should_skip_text(text)
+
+
 async def notify(bot):
     clear_cache_dir()
     hard_time_offset = datetime.datetime.now() - hard_time_window
@@ -85,6 +93,7 @@ async def notify(bot):
     sent_posts = []
     file_cache = {}
     disabled_users = set()
+    messages_to_skip = set()
     network_error_logged = False
     for post in posts:
         user_id = post.user_id
@@ -95,6 +104,15 @@ async def notify(bot):
         posts_group.sort()
         messages = [loaded[(post.channel, post_id)] for post_id in posts_group]
         logging.debug(f"Send message to {user_id}: {post.channel} {post.post_id}")
+        if messages[0] in messages_to_skip:
+            sent_posts.append(post)
+            continue
+        if should_skip_message(messages[0]):
+            sent_posts.append(post)
+            messages_to_skip.add(messages[0])
+            link = create_message_link(post.channel, messages[0])
+            logging.info(f"Message skipped: {link}")
+            continue
         try:
             async def do_send():
                 await send_message(bot, post.channel, user_id, messages, file_cache)
@@ -217,8 +235,12 @@ async def send_message_as_link(bot, channel, user_id, messages):
     reaction = get_first_reaction(message)
     reaction = f"{reaction} " if reaction else ""
     title = message.chat.title if message.chat is not None else channel
-    link = message.link if message.chat is not None else f"https://t.me/{channel}/{message.id}"
+    link = create_message_link(channel, message)
     await bot.send_message(user_id, parse_mode="markdown", text=f"{reaction}[{title}]({link})")
+
+
+def create_message_link(channel, message):
+    return message.link if message.chat is not None else f"https://t.me/{channel}/{message.id}"
 
 
 async def send_message(bot, channel: str, user_id, messages: List, file_cache):
