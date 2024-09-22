@@ -31,7 +31,7 @@ CREATE TABLE IF NOT EXISTS Attachment
 CREATE TABLE IF NOT EXISTS BotUser
 (
     id      SERIAL PRIMARY KEY,
-    user_id INT     NOT NULL UNIQUE,
+    user_id BIGINT     NOT NULL UNIQUE,
     lang    VARCHAR NOT NULL
 );
 
