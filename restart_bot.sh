@@ -15,8 +15,10 @@ echo "Bot stopped"
 echo "Sync files with release bot"
 ./sync.sh || exit 3
 
+./sync_log.sh true || exit 4
+
 echo "Restart bot"
-ssh -i "$KEY_PATH" "$TARGET_USER@$TARGET_HOST" "cd $TARGET_PATH && ./build.sh" || exit 4
+ssh -i "$KEY_PATH" "$TARGET_USER@$TARGET_HOST" "cd $TARGET_PATH && ./build.sh" || exit 5
 
 echo "Done"
 
