@@ -104,12 +104,12 @@ async def notify(bot):
         posts_group.sort()
         messages = [loaded[(post.channel, post_id)] for post_id in posts_group]
         logging.debug(f"Send message to {user_id}: {post.channel} {post.post_id}")
-        if messages[0] in messages_to_skip:
+        if messages[0].id in messages_to_skip:
             sent_posts.append(post)
             continue
         if should_skip_message(messages[0]):
             sent_posts.append(post)
-            messages_to_skip.add(messages[0])
+            messages_to_skip.add(messages[0].id)
             link = create_message_link(post.channel, messages[0])
             logging.info(f"Message skipped: {link}")
             continue
