@@ -12,7 +12,7 @@ def should_skip_text(text: str):
         language = detect(text)
         prompt = create_message("prompt.detect.comments.request", language)
         completion = client.chat.completions.create(
-            model="gpt-3.5-turbo",
+            model="gpt-4o-mini",
             messages=[
                 {"role": "system", "content": "You can answer only 'YES' or 'NO'. Answer 'NO' if you are not sure."},
                 {
