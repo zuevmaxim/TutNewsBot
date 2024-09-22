@@ -40,6 +40,7 @@ services:
       - SCROLLING_TIMEOUT_MIN=${SCROLLING_TIMEOUT_MIN}
       - PYTHONPATH=/app
       - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - LOG_USER_ID=${LOG_USER_ID}
     working_dir: /app
     command: >
       sh -c "

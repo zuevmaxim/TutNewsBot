@@ -15,6 +15,7 @@ from pyrogram.enums import ChatType
 from ai.ai import should_skip_text
 from bot.config import *
 from bot.context import Context
+from bot.log import log_to_user
 from bot.scrolling_utils import get_messages, load_file
 from storage.posts_storage import PostsStorage, PostNotification
 from storage.subscriptions_storage import SubscriptionStorage
@@ -111,7 +112,8 @@ async def notify(bot):
             sent_posts.append(post)
             messages_to_skip.add(messages[0].id)
             link = create_message_link(post.channel, messages[0])
-            logging.info(f"Message skipped: {link}")
+            logging.warn(f"Message skipped: {link}")
+            await log_to_user(bot, f"Message skipped: {link}")
             continue
         try:
             async def do_send():

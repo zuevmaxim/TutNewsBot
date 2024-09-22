@@ -24,6 +24,7 @@ rsync -avhP \
   --include 'commands' \
   --include 'storage' \
   --include '.env' \
+  --include 'env/release.env' \
   --exclude '*.env' \
   --exclude 'sync.sh' \
   --exclude 'sync_log.sh' \
