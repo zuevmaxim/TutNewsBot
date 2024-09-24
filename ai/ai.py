@@ -4,9 +4,14 @@ from langdetect import detect
 from openai import OpenAI, RateLimitError
 
 from bot.messages import create_message
+from bot.utils import utf16len
+
+MAX_HYPE_TEXT_LENGTH = 200
 
 
 def should_skip_text(text: str):
+    if utf16len(text) > MAX_HYPE_TEXT_LENGTH:
+        return False
     try:
         client = OpenAI()
         language = detect(text)

@@ -17,6 +17,7 @@ from bot.config import *
 from bot.context import Context
 from bot.log import log_to_user
 from bot.scrolling_utils import get_messages, load_file
+from bot.utils import utf16len
 from storage.posts_storage import PostsStorage, PostNotification
 from storage.subscriptions_storage import SubscriptionStorage
 
@@ -249,13 +250,6 @@ async def send_message(bot, channel: str, user_id, messages: List, file_cache):
     if await send_original_message(bot, channel, user_id, messages, file_cache):
         return
     await send_message_as_link(bot, channel, user_id, messages)
-
-
-def utf16len(s):
-    # Encode the string into UTF-16 (result includes BOM)
-    # Each UTF-16 symbol is represented by 2 bytes
-    # We subtract 2 to get rid of Byte Order Mark
-    return len(s.encode('utf-16')) // 2 - 1
 
 
 def create_text(channel: str, message: types.Message, text: str, entities: list):

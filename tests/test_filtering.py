@@ -40,3 +40,8 @@ class TestFiltering(unittest.TestCase):
         💅🏻 — у меня вообще-то 48-е августа
         🌚 — буду терпеть до последнего зелёного листика
         """))
+
+    def test_should_not_skip_long_messsages(self):
+        message = "Что вы делаете по утрам? Оставьте комментарий"
+        message = "\n".join(message for _ in range(20))
+        self.assertFalse(should_skip_text(message))
