@@ -23,7 +23,10 @@ services:
   bot:
     container_name: tutnews-bot
     image: python:3.9
-    restart: unless-stopped
+    deploy:
+      restart_policy:
+        condition: on-failure
+        max_attempts: 5
     depends_on:
       - db
     volumes:
