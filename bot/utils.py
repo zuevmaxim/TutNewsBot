@@ -1,7 +1,10 @@
 import asyncio
+from typing import Optional
 
 
-def extract_chanel_name(name: str) -> str:
+def extract_chanel_name(name: str) -> Optional[str]:
+    if name is None:
+        return None
     name = name.strip()
     prefix = "https://t.me/"
     if name[:len(prefix)] == prefix:

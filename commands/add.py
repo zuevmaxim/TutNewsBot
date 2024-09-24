@@ -30,6 +30,9 @@ async def handle_add_subscription(message: types.Message, state: FSMContext):
 async def handle_subscription_name(message: types.Message, safe_get_channel, state: Optional[FSMContext]):
     lang = message.from_user.language_code
     text = message.text
+    if text is None:
+        await message.answer(create_message("empty.channel.name", lang))
+        return
     channel = extract_chanel_name(text)
     if len(channel) == 0:
         await message.answer(create_message("empty.channel.name", lang))

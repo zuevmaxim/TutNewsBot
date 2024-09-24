@@ -20,7 +20,11 @@ async def handle_remove_subscription(message: types.Message, state: FSMContext):
 async def handle_subscription_name(message: types.Message, state: FSMContext):
     user_id = message.from_user.id
     lang = message.from_user.language_code
-    channel = extract_chanel_name(message.text)
+    text = message.text
+    if text is None:
+        await message.answer(create_message("empty.channel.name", lang))
+        return
+    channel = extract_chanel_name(text)
     if len(channel) == 0:
         await message.answer(create_message("empty.channel.name", lang))
         return
