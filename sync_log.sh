@@ -11,7 +11,7 @@ fi
 CLEAR_LOGS=$1
 
 echo "Load log"
-mkdir "$LOCAL_PATH/logs"
+mkdir -p "$LOCAL_PATH/logs"
 rsync -avhP \
   -e "ssh -i $KEY_PATH" \
   "$TARGET_USER@$TARGET_HOST:$TARGET_PATH/bot.log" "$LOCAL_PATH/logs/$(date +%Y%m%d-%H%M%S)-bot.log" || exit 2
