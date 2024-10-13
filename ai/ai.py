@@ -1,6 +1,6 @@
 import logging
 
-from langdetect import detect
+from langdetect import detect, LangDetectException
 from openai import OpenAI, RateLimitError
 
 from bot.messages import create_message
@@ -35,7 +35,8 @@ def should_skip_text(text: str):
         return answer == "YES"
     except RateLimitError:
         logging.info("Rate limit exceeded")
-        return False
+    except LangDetectException as e:
+        logging.warn(f"Failed to detect language in text: {text}")
     except Exception as e:
         logging.exception(e)
-        return False
+    return False
