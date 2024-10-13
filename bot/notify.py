@@ -229,6 +229,7 @@ async def send_original_message(bot, channel: str, user_id, messages: List, file
     except TelegramEntityTooLarge:
         logging.warning("Cannot send media, as it is too large, resend as a link")
     except Exception as e:
+        logging.error(f"Failed to send message: {create_message_link(channel, main_message)}")
         logging.exception(e)
     return False
 
