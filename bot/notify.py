@@ -274,8 +274,9 @@ def create_text(channel: str, message: types.Message, text: str, entities: list)
     if message.chat.type == ChatType.CHANNEL:
         chat_name = f"{reaction}{message.chat.title}:\n"
     else:
-        author = f"{message.from_user.first_name} {message.from_user.last_name}"
-        chat_name = f"{reaction}{message.chat.title} ({author}):\n"
+        from_user = message.from_user
+        author = f" ({from_user.first_name} {from_user.last_name})" if from_user is not None else ""
+        chat_name = f"{reaction}{message.chat.title}{author}:\n"
 
     text = chat_name + text
     utf_16_chat_name_length = utf16len(chat_name)
