@@ -125,6 +125,7 @@ if __name__ == "__main__":
         context.stop = False
         context.scrolling_event = asyncio.Event()
         context.bot = bot
+        context.cached_notifications = set()
 
         init_scrolling()
         loop = asyncio.get_event_loop()

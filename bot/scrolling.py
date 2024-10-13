@@ -9,7 +9,7 @@ from pyrogram.errors import BadRequest, RpcCallFail
 from pyrogram.types import Chat
 
 from bot.config import *
-from bot.context import Context
+from bot.context import Context, log_message_without_duplicates
 from bot.notify import trigger_notification
 from bot.scrolling_utils import app, GetChatStatus, safe_get_channel
 from bot.utils import wait_unless_triggered
@@ -127,7 +127,7 @@ async def scroll():
             channel_name = c.channel
             status, chat = await safe_get_channel(channel_name)
             if status != GetChatStatus.SUCCESS:
-                logging.warning(f"Failed to get chat {channel_name}: {status}")
+                log_message_without_duplicates(logging.WARNING, f"Failed to get chat {channel_name}: {status}")
                 continue
             posts, attachments = await collect_chat_history(chat, c.id, channel_name, c.is_empty)
             if Context().stop:
