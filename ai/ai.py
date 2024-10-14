@@ -35,8 +35,8 @@ def should_skip_text(text: str):
         return answer == "YES"
     except RateLimitError:
         logging.info("Rate limit exceeded")
-    except LangDetectException as e:
-        logging.warn(f"Failed to detect language in text: {text}")
+    except LangDetectException:
+        logging.info(f"Failed to detect language in text: {text}")
     except Exception as e:
         logging.exception(e)
     return False
