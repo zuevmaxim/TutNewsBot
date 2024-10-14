@@ -9,8 +9,8 @@ from bot.utils import utf16len
 MAX_HYPE_TEXT_LENGTH = 200
 
 
-def should_skip_text(text: str):
-    if utf16len(text) > MAX_HYPE_TEXT_LENGTH:
+def should_skip_text(text: str, max_length=MAX_HYPE_TEXT_LENGTH):
+    if utf16len(text) > max_length:
         return False
     try:
         client = OpenAI()

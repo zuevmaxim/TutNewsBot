@@ -52,6 +52,17 @@ class PostStatistics:
         return from_dict(data_class=PostStatistics, data=json_data)
 
 
+@dataclass(frozen=True)
+class SkippedPost:
+    channel_id: int
+    post_id: int
+    timestamp: datetime
+
+    @staticmethod
+    def parse_json(json_data: dict):
+        return from_dict(data_class=SkippedPost, data=json_data)
+
+
 class PostsStorage:
     @staticmethod
     def get_notification_posts(hard_time_offset: datetime) -> List[PostNotification]:
@@ -111,9 +122,26 @@ class PostsStorage:
                    "ON CONFLICT DO NOTHING".format(str_args), args)
 
     @staticmethod
+    def add_skipped_posts(skipped_posts: List[SkippedPost]):
+        if len(skipped_posts) == 0:
+            return
+        str_args = ", ".join(["(%s, %s, %s)"] * len(skipped_posts))
+        args = []
+        for skipped_post in skipped_posts:
+            args += [skipped_post.channel_id, skipped_post.post_id, skipped_post.timestamp]
+        db.execute("INSERT INTO SkippedPost(channel_id, post_id, timestamp) "
+                   "VALUES {} ON CONFLICT (channel_id, post_id) DO NOTHING".format(str_args), args)
+
+    @staticmethod
+    def get_skipped_posts(channel_id: int) -> set[int]:
+        cursor = db.execute("SELECT SkippedPost.post_id FROM SkippedPost WHERE channel_id = %s", [channel_id])
+        return set(s[0] for s in cursor)
+
+    @staticmethod
     def delete_old_posts(time_offset):
         db.execute("DELETE FROM Attachment "
                    "USING Post "
                    "WHERE Attachment.main_post_id = Post.id "
                    "AND timestamp <= %s; "
-                   "DELETE FROM Post WHERE timestamp <= %s", [time_offset, time_offset])
+                   "DELETE FROM SkippedPost WHERE timestamp <= %s; "
+                   "DELETE FROM Post WHERE timestamp <= %s", [time_offset, time_offset, time_offset])

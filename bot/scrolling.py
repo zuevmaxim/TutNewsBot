@@ -12,10 +12,10 @@ from bot.config import *
 from bot.context import Context, log_message_without_duplicates
 from bot.notify import trigger_notification
 from bot.scrolling_utils import app, GetChatStatus, safe_get_channel
-from bot.utils import wait_unless_triggered
-from storage.posts_storage import PostsStorage, Post, Attachment
+from bot.utils import wait_unless_triggered, should_skip_message
+from storage.posts_storage import PostsStorage, Post, Attachment, SkippedPost
 from storage.statistic_storage import Statistic, StatisticStorage
-from storage.subscriptions_storage import SubscriptionStorage
+from storage.subscriptions_storage import SubscriptionStorage, Channel
 
 
 def trigger_scrolling():
@@ -46,7 +46,8 @@ def update_statistics():
 async def scheduled_scrolling():
     async with app:
         await sleep(initial_timeout_s)
-        while not Context().stop:
+        context = Context()
+        while not context.stop:
             logging.info("Start scrolling session")
             try:
                 await scroll()
@@ -58,20 +59,26 @@ async def scheduled_scrolling():
                 logging.exception(e)
             logging.info("Complete scrolling session")
             await trigger_notification()
-            if Context().stop:
+            if context.stop:
                 return
-            await wait_unless_triggered(scrolling_timeout_s, Context().scrolling_event)
+            await wait_unless_triggered(scrolling_timeout_s, context.scrolling_event)
 
 
-async def collect_chat_history(chat: Chat, channel_id: int, channel_name: str, is_empty: bool):
+async def collect_chat_history(chat: Chat, c: Channel):
     hard_time_offset = datetime.datetime.now() - hard_time_window
     soft_time_offset = datetime.datetime.now() - soft_time_window
     posts = []
     has_comments = chat.type != ChatType.CHANNEL or chat.linked_chat is not None
     media_groups = defaultdict(list)
 
+    channel_id, channel_name, is_empty, last_seen_post_id = c.id, c.channel, c.is_empty, c.last_seen_post_id
+    skipped_posts = PostsStorage.get_skipped_posts(channel_id)
+    new_skipped_posts = []
+    new_last_seen_post_id = last_seen_post_id
+
+    context = Context()
     async for message in app.get_chat_history(chat_id=f"@{channel_name}"):
-        if Context().stop:
+        if context.stop:
             return posts
 
         # ignore service messages
@@ -79,9 +86,16 @@ async def collect_chat_history(chat: Chat, channel_id: int, channel_name: str, i
             continue
 
         post_id = message.id
+        new_last_seen_post_id = max(new_last_seen_post_id, post_id)
         timestamp = message.date
         if timestamp < hard_time_offset or not is_empty and timestamp < soft_time_offset:
             break
+        if post_id > last_seen_post_id:
+            if post_id in skipped_posts:
+                continue
+            if await should_skip_message(message, context.bot, channel_name):
+                new_skipped_posts.append(SkippedPost(channel_id, post_id, timestamp))
+                continue
         if message.media_group_id is not None:
             media_groups[(channel_id, message.media_group_id)].append(post_id)
         forwards = message.forwards if message.forwards is not None else 0
@@ -117,7 +131,7 @@ async def collect_chat_history(chat: Chat, channel_id: int, channel_name: str, i
     # do not consider post with attachment as a target
     posts = [post for post in posts if post.post_id not in attachment_posts]
 
-    return posts, attachments
+    return posts, attachments, new_skipped_posts, new_last_seen_post_id
 
 
 async def scroll():
@@ -129,11 +143,13 @@ async def scroll():
             if status != GetChatStatus.SUCCESS:
                 log_message_without_duplicates(logging.WARNING, f"Failed to get chat {channel_name}: {status}")
                 continue
-            posts, attachments = await collect_chat_history(chat, c.id, channel_name, c.is_empty)
+            posts, attachments, skipped_posts, last_seen_post_id = await collect_chat_history(chat, c)
             if Context().stop:
                 return
             PostsStorage.add_posts(posts)
             PostsStorage.add_attachments(attachments)
+            PostsStorage.add_skipped_posts(skipped_posts)
+            SubscriptionStorage.update_last_seen_post_id(c.id, last_seen_post_id)
             logging.debug(f"Scrolled {len(posts)} posts in {channel_name}")
         except RpcCallFail as e:
             await sleep(internal_error_timeout_s)

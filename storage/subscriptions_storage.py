@@ -22,6 +22,7 @@ class Channel:
     id: int
     channel: str
     is_empty: bool
+    last_seen_post_id: int
 
     @staticmethod
     def parse_json(json_data: dict):
@@ -41,12 +42,17 @@ class SubscriptionStorage:
     @staticmethod
     def get_channels() -> List[Channel]:
         cursor = db.execute(
-            "SELECT DISTINCT Channel.id, Channel.name AS channel, MIN(post.post_id) IS NULL as is_empty "
+            "SELECT DISTINCT Channel.id, Channel.name AS channel, MIN(post.post_id) IS NULL as is_empty, Channel.last_seen_post_id "
             "FROM Subscription "
             "JOIN Channel ON Channel.id = Subscription.channel_id "
             "LEFT JOIN Post ON Channel.id = Post.channel_id "
             "GROUP BY Channel.id, Channel.name")
         return list(map(Channel.parse_json, cursor))
+
+    @staticmethod
+    def update_last_seen_post_id(channel_id: int, post_id: int):
+        db.execute("UPDATE Channel SET last_seen_post_id = %s WHERE id = %s",
+                   [post_id, channel_id])
 
     @staticmethod
     def get_subscription(user_id: str, channel: str) -> Optional[Subscription]:
