@@ -69,6 +69,7 @@ async def collect_chat_history(chat: Chat, c: Channel):
     soft_time_offset = datetime.datetime.now() - soft_time_window
     posts = []
     has_comments = chat.type != ChatType.CHANNEL or chat.linked_chat is not None
+    is_channel = chat.type == ChatType.CHANNEL
     media_groups = defaultdict(list)
 
     channel_id, channel_name, is_empty, last_seen_post_id = c.id, c.channel, c.is_empty, c.last_seen_post_id
@@ -90,7 +91,7 @@ async def collect_chat_history(chat: Chat, c: Channel):
         timestamp = message.date
         if timestamp < hard_time_offset or not is_empty and timestamp < soft_time_offset:
             break
-        if post_id > last_seen_post_id:
+        if post_id > last_seen_post_id and is_channel:
             if post_id in skipped_posts:
                 continue
             if await should_skip_message(message, context.bot, channel_name):
