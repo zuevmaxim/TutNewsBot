@@ -1,9 +1,9 @@
 english_messages = {
     "start.info": "Hi! I can filter interesting news from your channels. Please use /add command to add "
                   "subscription to a channel",
-    "add.subscription": "I will notify you about top {}% of posts from {}",
-    "existing.subscription": "I notify you about top {}% of posts from {}",
-    "change.subscription": "Notify about top {}%",
+    "add.subscription": "I will notify you about top {}% of posts from {}. Change subscription: notify about top",
+    "existing.subscription": "I notify you about top {}% of posts from {}. Change subscription: notify about top",
+    "change.subscription": "{}%",
     "choose.channel": "Choose channel",
     "empty.channel.name": "Please send me a valid link to a channel",
     "channel.not.found": "Cannot find '{}' channel. Please check the link",
@@ -32,9 +32,9 @@ english_messages = {
 russian_messages = {
     "start.info": "Привет! Я умею фильтровать интересные сообщения из твоих каналов. Используй команду "
                   "/add, чтобы добавить подписку на канал",
-    "add.subscription": "Буду уведомлять тебя о топ {}% постов в {}",
-    "existing.subscription": "Я уведомляю тебя о топ {}% постов в {}",
-    "change.subscription": "Уведомляй о топ {}%",
+    "add.subscription": "Буду уведомлять тебя о топ {}% постов в {}. Изменить: уведомляй о топ",
+    "existing.subscription": "Я уведомляю тебя о топ {}% постов в {}. Изменить: уведомляй о топ",
+    "change.subscription": "{}%",
     "choose.channel": "Выбери канал",
     "empty.channel.name": "Пришли мне корректную ссылку на канал",
     "channel.not.found": "Не могу найти '{}' канал. Укажи другую ссылку",

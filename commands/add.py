@@ -76,7 +76,7 @@ async def reply_subscription(message, channel: str, percentile: int, message_key
     for p in percentiles:
         builder.button(text=create_message("change.subscription", lang, 100 - p),
                        callback_data=f"set_percentile;{channel};{p}")
-    builder.adjust(1)
+    builder.adjust(2)
     text = create_message(message_key, lang, 100 - percentile, f"@{channel}")
     await message.bot.send_message(chat_id=user_id, text=text, reply_markup=builder.as_markup())
     trigger_scrolling()
