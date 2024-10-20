@@ -23,6 +23,6 @@ hard_time_window = datetime.timedelta(days=1)
 soft_time_window = datetime.timedelta(hours=6)
 news_drop_time = datetime.timedelta(weeks=1)
 
-INTERESTING_PERCENTILES = [75, 80, 90, 95, 99]
-DEFAULT_PERCENTILE = 90
+INTERESTING_PERCENTILES = [0, 25, 50, 75, 90, 95, 99]
+DEFAULT_PERCENTILE = 95
 logging_user = get_env_or("LOG_USER_ID", None)
