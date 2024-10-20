@@ -92,9 +92,9 @@ async def collect_chat_history(chat: Chat, c: Channel):
         timestamp = message.date
         if timestamp < hard_time_offset or not is_empty and timestamp < soft_time_offset:
             break
+        if post_id in skipped_posts:
+            continue
         if post_id > last_seen_post_id and is_channel:
-            if post_id in skipped_posts:
-                continue
             if await should_skip_message(message, context.bot, channel_name):
                 new_skipped_posts.append(SkippedPost(channel_id, post_id, timestamp))
                 continue
