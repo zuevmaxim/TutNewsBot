@@ -79,6 +79,7 @@ async def collect_chat_history(chat: Chat, c: Channel):
 
     context = Context()
     async for message in app.get_chat_history(chat_id=f"@{channel_name}"):
+        await sleep(scrolling_single_timeout_s)
         if context.stop:
             return posts
 
@@ -117,7 +118,6 @@ async def collect_chat_history(chat: Chat, c: Channel):
                 else:
                     logging.warning(f"Failed to update comments in {message.link} {e.MESSAGE}")
         posts.append(Post(channel_id, post_id, comments, reactions, forwards, timestamp))
-        await sleep(scrolling_single_timeout_s)
 
     attachments = []
     attachment_posts = set()
