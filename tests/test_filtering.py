@@ -50,6 +50,23 @@ class TestFiltering(unittest.TestCase):
         😶 Подписаться | Задать вопрос
         """))
 
+    def test_should_not_skip_6(self):
+        self.assertFalse(should_skip_text("Встреча недели 🤍"))
+
+    def test_should_not_skip_7(self):
+        self.assertFalse(should_skip_text("""
+        10 привычных мыслей, которые заставляют зря тратить время
+
+        Избавиться от них поможет одно упражнение.
+        
+        Читать →
+        
+        😶 Подписаться | Задать вопрос
+        """))
+
+    def test_should_not_skip_8(self):
+        self.assertFalse(should_skip_text("Вместе 🖤"))
+
     def test_skip_comment_hype_1(self):
         self.assertTrue(should_skip_text("Опишите ваши выходные одним стикером в комментариях 👇"))
 
@@ -58,6 +75,13 @@ class TestFiltering(unittest.TestCase):
         Продолжите фразу в комментариях 👇🏻
 
         Хочется простого человеческого...
+        """))
+
+    def test_skip_comment_hype_3(self):
+        self.assertTrue(should_skip_text("""
+        X рассказал о творческом кризисе и предстоящих релизах
+
+        Что думаете?
         """))
 
     def test_skip_comment_hype_3(self):

@@ -21,11 +21,11 @@ english_messages = {
     "invitation.link.error": "This is an invitation link. Looks like I cannot scroll this channel. " +
                              "Please send a link to a public channel",
     "prompt.detect.comments.request":
-        "Analyze the text provided below and determine if it is a hype, comment invitation, or engagement-driven "
-        "message (like asking for opinions, polls with emojis, or calls to action for comments). Respond 'YES' if "
-        "the text is designed to encourage user interaction, feedback, or opinions, and lacks substantive "
-        "informational content. Respond 'NO' if the text is primarily informative or not clearly asking for user "
-        "engagement.",
+        "Analyze the text below and determine if it is primarily a call to action or an engagement-driven message ("
+        "e.g., asking for comments, participation in a poll with emojis, or requesting opinions). Respond 'YES' if "
+        "the text is mostly a call to action or focused on soliciting user interaction. Respond 'NO' if the text "
+        "contains valuable or informative content, even if it includes a small call to action at the end, "
+        "such as a link, subscribe button, or emoji.",
     "internal.error": "Internal bot error",
 }
 
@@ -51,11 +51,11 @@ russian_messages = {
     "private.chat.error": "Это приватный чат, я не могу его читать :(",
     "invitation.link.error": "Это ссылка-приглашение. Я не смогу читать этот канал. Пришли ссылку на публичный канал",
     "prompt.detect.comments.request":
-        "Проанализируйте текст ниже и определите, является ли он призывом к взаимодействию "
-        "(например, приглашением оставить комментарий, ответить на опрос с использованием эмодзи или выразить мнение). "
-        "Ответьте 'YES', если текст направлен на привлечение взаимодействия пользователей, их отзывов или мнений, и "
-        "не содержит значимого информационного содержания. Ответьте 'NO', если текст является в основном информативным "
-        "или не содержит явного призыва к взаимодействию.",
+        "Проанализируйте текст ниже и определите, является ли он призывом к взаимодействию (например, приглашением "
+        "оставить комментарий, участием в опросе с использованием эмодзи или просьбой выразить мнение). Ответьте "
+        "'YES', если текст состоит преимущественно из призыва к действию или участия в вопросах/опросах. Ответьте "
+        "'NO', если текст содержит полезную или информативную информацию, даже если в конце есть небольшой призыв к "
+        "взаимодействию, такой как ссылка или кнопка подписки.",
     "internal.error": "У меня произошла ошибка",
 }
 
