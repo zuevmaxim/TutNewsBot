@@ -20,7 +20,12 @@ english_messages = {
     "private.chat.error": "This is a private chat. I cannot scroll it :(",
     "invitation.link.error": "This is an invitation link. Looks like I cannot scroll this channel. " +
                              "Please send a link to a public channel",
-    "prompt.detect.comments.request": "Is there a direct instruction (or implied) to react or leave a comment in the following text?",
+    "prompt.detect.comments.request":
+        "Analyze the text provided below and determine if it is a hype, comment invitation, or engagement-driven "
+        "message (like asking for opinions, polls with emojis, or calls to action for comments). Respond 'YES' if "
+        "the text is designed to encourage user interaction, feedback, or opinions, and lacks substantive "
+        "informational content. Respond 'NO' if the text is primarily informative or not clearly asking for user "
+        "engagement.",
     "internal.error": "Internal bot error",
 }
 
@@ -45,7 +50,12 @@ russian_messages = {
     "bad.type.of.channel": "Это не канал, попробуй что-нибудь ещё",
     "private.chat.error": "Это приватный чат, я не могу его читать :(",
     "invitation.link.error": "Это ссылка-приглашение. Я не смогу читать этот канал. Пришли ссылку на публичный канал",
-    "prompt.detect.comments.request": "Есть ли в следующем тексте прямое указание (или подразумевается) поставить реакцию или оставить комментарий?",
+    "prompt.detect.comments.request":
+        "Проанализируйте текст ниже и определите, является ли он призывом к взаимодействию "
+        "(например, приглашением оставить комментарий, ответить на опрос с использованием эмодзи или выразить мнение). "
+        "Ответьте 'YES', если текст направлен на привлечение взаимодействия пользователей, их отзывов или мнений, и "
+        "не содержит значимого информационного содержания. Ответьте 'NO', если текст является в основном информативным "
+        "или не содержит явного призыва к взаимодействию.",
     "internal.error": "У меня произошла ошибка",
 }
 
